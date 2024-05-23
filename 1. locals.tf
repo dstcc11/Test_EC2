@@ -23,12 +23,6 @@ locals {
           iops        = "5000"
         }
         "vol2" = {
-          device_name = "/dev/sdf"
-          size        = "100"
-          type        = "io2"
-          iops        = "5000"
-        }
-        "vol3" = {
           device_name = "/dev/sdm"
           size        = "75"
           type        = "gp3"
