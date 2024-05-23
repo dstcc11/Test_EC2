@@ -16,7 +16,7 @@ locals {
       instance_type = "t2.micro"
       ami           = data.aws_ami.latest_amz_windows2019srv.id
       ebs_volumes = {
-        "vol1" = {
+        "vola" = {
           device_name = "/dev/sdm"
           size        = "75"
           type        = "gp3"
