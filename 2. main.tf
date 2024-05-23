@@ -54,7 +54,7 @@ data "aws_ami" "latest_amz_windows2019srv" {
 resource "aws_security_group" "sg" {
   for_each = local.ec2
   name     = each.key
-  vpc_id   = aws_vpc.default.id
+  vpc_id   = data.aws_vpc.default.id
   dynamic "ingress" {
     for_each = try(each.value.ingress_rules, [
       {
@@ -103,7 +103,7 @@ resource "aws_instance" "ec2" {
   for_each                    = local.ec2
   ami                         = each.value.ami
   instance_type               = each.value.instance_type
-  subnet_id                   = aws_subnet.default.id
+  subnet_id                   = data.aws_subnet.default.id
   vpc_security_group_ids      = [aws_security_group.sg["${each.key}"].id]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.key_pair.key_name
