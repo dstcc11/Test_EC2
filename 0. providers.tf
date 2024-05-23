@@ -2,7 +2,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
-/*
+
 terraform {
   backend "s3" {
     bucket         = "test-tf-aws"
@@ -11,8 +11,8 @@ terraform {
     dynamodb_table = "test-tf-aws"
   }
 }
-*/
 
+/*
 terraform {
   cloud {
     organization = "KuTest"
@@ -22,3 +22,4 @@ terraform {
     }
   }
 }
+*/
