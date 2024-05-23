@@ -1,6 +1,6 @@
 locals {
   ec2 = {
-    "trns-test1" = { #1
+    "test1" = { #1
       instance_type = "t2.micro"
       ami           = data.aws_ami.latest_amz_linux.id
       ebs_volumes = {
@@ -12,7 +12,7 @@ locals {
         }
       }
     }
-    "trns-test2" = { #2
+    "test2" = { #2
       instance_type = "t2.micro"
       ami           = data.aws_ami.latest_amz_windows2019srv.id
       ebs_volumes = {
