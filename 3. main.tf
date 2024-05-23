@@ -98,7 +98,7 @@ resource "aws_instance" "ec2" {
     volume_type = "gp3"
   }
   tags = {
-    Name = each.key
+    Name = "ec-${each.key}"
   }
 }
 
