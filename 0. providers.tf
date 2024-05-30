@@ -22,7 +22,7 @@ terraform {
     dynamodb_table = "test-tf-aws"
   }
 }
-*/
+
 
 terraform {
   cloud {
@@ -33,3 +33,4 @@ terraform {
     }
   }
 }
+*/

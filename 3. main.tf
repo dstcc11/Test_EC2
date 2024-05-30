@@ -79,10 +79,16 @@ resource "aws_key_pair" "key_pair" {
   key_name   = "my-key-pair"
   public_key = tls_private_key.key_pair.public_key_openssh
 }
+/*
 # Save file
 resource "local_file" "ssh_key" {
   filename = "${aws_key_pair.key_pair.key_name}.pem"
   content  = tls_private_key.key_pair.private_key_pem
+}
+*/
+
+output "key" {
+  value     = aws_key_pair.key_pair.key_name
 }
 
 resource "aws_instance" "ec2" {
@@ -92,7 +98,8 @@ resource "aws_instance" "ec2" {
   subnet_id                   = data.aws_subnet.default.id
   vpc_security_group_ids      = [aws_security_group.sg["${each.key}"].id]
   associate_public_ip_address = true
-  key_name                    = aws_key_pair.key_pair.key_name
+  #key_name                    = aws_key_pair.key_pair.key_name
+  key_name                    = "my-key-pair"
   root_block_device {
     encrypted   = true
     volume_type = "gp3"
