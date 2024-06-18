@@ -61,10 +61,14 @@ resource "aws_iam_policy" "ha" {
     {
       "Effect": "Allow",
       "Action": [
-        "ec2:describeinstancestatus",
-        "ec2:describenetworkinterfaces",
-        "ec2:assignprivateipaddresses"
-      ],
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:AssignPrivateIpAddresses",
+                "ec2:ModifyNetworkInterfaceAttribute",
+                "ec2:UnassignPrivateIpAddresses",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeInstances"
+            ],
       "Resource": "*"
     }
   ]

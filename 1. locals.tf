@@ -17,18 +17,7 @@ locals {
       instance_type        = "t2.micro"
       ami                  = data.aws_ami.latest_amz_windows2019srv.id
       iam_instance_profile = "ha"
-      ebs_volumes = {
-        "vola" = {
-          device_name = "/dev/sdm"
-          size        = "75"
-          type        = "gp3"
-        }
-      }
-    }
-    "test3" = { #3
-      instance_type        = "t2.micro"
-      ami                  = data.aws_ami.latest_amz_linux.id
-      iam_instance_profile = "ha"
+      private_ip           = "172.31.35.100"
     }
   }
 }

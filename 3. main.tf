@@ -95,6 +95,8 @@ resource "aws_instance" "ec2" {
   ami                         = each.value.ami
   instance_type               = each.value.instance_type
   subnet_id                   = data.aws_subnet.default.id
+  private_ip                  = can(each.value.private_ip) ? (each.value.private_ip != "" ? each.value.private_ip : null) : null
+  secondary_private_ips       = can(each.value.secondary_private_ips) ? (each.value.secondary_private_ips != "" ? each.value.secondary_private_ips : null) : null
   vpc_security_group_ids      = [aws_security_group.sg["${each.key}"].id]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.key_pair.key_name
