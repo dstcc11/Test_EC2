@@ -1,8 +1,9 @@
 locals {
   ec2 = {
     "test1" = { #1
-      instance_type = "t2.micro"
-      ami           = data.aws_ami.latest_amz_linux.id
+      instance_type        = "t2.micro"
+      ami                  = data.aws_ami.latest_amz_linux.id
+      iam_instance_profile = "ha"
       ebs_volumes = {
         "vol1" = {
           device_name = "/dev/sdh"
@@ -13,8 +14,9 @@ locals {
       }
     }
     "test2" = { #2
-      instance_type = "t2.micro"
-      ami           = data.aws_ami.latest_amz_windows2019srv.id
+      instance_type        = "t2.micro"
+      ami                  = data.aws_ami.latest_amz_windows2019srv.id
+      iam_instance_profile = "ha"
       ebs_volumes = {
         "vola" = {
           device_name = "/dev/sdm"
@@ -24,8 +26,9 @@ locals {
       }
     }
     "test3" = { #3
-      instance_type = "t2.micro"
-      ami           = data.aws_ami.latest_amz_linux.id
+      instance_type        = "t2.micro"
+      ami                  = data.aws_ami.latest_amz_linux.id
+      iam_instance_profile = "ha"
     }
   }
 }
