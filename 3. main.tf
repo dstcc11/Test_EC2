@@ -98,7 +98,11 @@ resource "aws_instance" "ec2" {
   vpc_security_group_ids      = [aws_security_group.sg["${each.key}"].id]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.key_pair.key_name
-  iam_instance_profile        = each.value.iam_instance_profile
+  iam_instance_profile = can(each.value.iam_instance_profile) ? (each.value.iam_instance_profile != "" ? (
+    each.value.iam_instance_profile == "multi-ip" ? aws_iam_instance_profile.multi-ip.name :
+    each.value.iam_instance_profile == "ha" ? aws_iam_instance_profile.ha.name :
+    null) :
+  null) : null
   root_block_device {
     encrypted   = true
     volume_type = "gp3"
