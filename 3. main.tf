@@ -37,6 +37,15 @@ data "aws_ami" "latest_amz_windows2019srv" {
   }
 }
 
+data "aws_ami" "latest_amz_windows2022srv" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2022-English-Full-Base-*"]
+  }
+}
+
 resource "aws_security_group" "sg" {
   for_each = local.ec2
   name     = each.key
@@ -109,8 +118,12 @@ resource "aws_instance" "ec2" {
     encrypted   = true
     volume_type = "gp3"
   }
+  lifecycle {
+    ignore_changes = [ami, secondary_private_ips]
+    #prevent_destroy = true
+  }
   tags = {
-    Name = "ec-${each.key}"
+    Name = "ec2-${each.key}"
   }
 }
 

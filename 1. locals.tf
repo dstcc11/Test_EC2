@@ -13,11 +13,17 @@ locals {
         }
       }
     }
-    "test2" = { #2
+    "win1" = { #2
       instance_type        = "t2.micro"
-      ami                  = data.aws_ami.latest_amz_windows2019srv.id
+      ami                  = data.aws_ami.latest_amz_windows2022srv.id
       iam_instance_profile = "ha"
-      private_ip           = "172.31.35.100"
+      private_ip           = "172.31.35.101"
+    }
+    "win2" = { #2
+      instance_type        = "t2.micro"
+      ami                  = data.aws_ami.latest_amz_windows2022srv.id
+      iam_instance_profile = "ha"
+      private_ip           = "172.31.35.102"
     }
   }
 }
