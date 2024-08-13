@@ -1,29 +1,26 @@
 locals {
   ec2 = {
-    "test1" = { #1
-      instance_type        = "t2.micro"
-      ami                  = data.aws_ami.latest_amz_linux.id
-      iam_instance_profile = "ha"
+    "site-collector" = {
+      instance_type = "t2.micro"
+      ami           = data.aws_ami.latest_ubuntu.id
+      volume_size   = "75"
       ebs_volumes = {
-        "vol1" = {
-          device_name = "/dev/sdh"
-          size        = "50"
-          type        = "io2"
-          iops        = "5000"
+        "content_repository" = {
+          device_name = "/dev/sdx"
+          size        = "1"
+          type        = "gp3"
+        }
+        "provenance_repository" = {
+          device_name = "/dev/sdy"
+          size        = "1"
+          type        = "gp3"
+        }
+        "flowfile_repository" = {
+          device_name = "/dev/sdz"
+          size        = "1"
+          type        = "gp3"
         }
       }
-    }
-    "win1" = { #2
-      instance_type        = "t2.micro"
-      ami                  = data.aws_ami.latest_amz_windows2022srv.id
-      iam_instance_profile = "ha"
-      private_ip           = "172.31.35.101"
-    }
-    "win2" = { #2
-      instance_type        = "t2.micro"
-      ami                  = data.aws_ami.latest_amz_windows2022srv.id
-      iam_instance_profile = "ha"
-      private_ip           = "172.31.35.102"
     }
   }
 }

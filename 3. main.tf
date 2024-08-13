@@ -19,6 +19,21 @@ data "aws_subnet" "default" {
   }
 }
 
+data "aws_ami" "latest_ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 data "aws_ami" "latest_amz_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -117,14 +132,17 @@ resource "aws_instance" "ec2" {
   root_block_device {
     encrypted   = true
     volume_type = "gp3"
+    volume_size = can(each.value.volume_size) ? (each.value.volume_size != "" ? each.value.volume_size : null) : null
   }
   lifecycle {
     ignore_changes = [ami, secondary_private_ips]
     #prevent_destroy = true
   }
-  tags = {
-    Name = "ec2-${each.key}"
-  }
+  tags = merge(
+    lookup(each.value, "tags", {}),
+    { Name = "ec2-${each.key}" }
+  )
+
 }
 
 resource "aws_ebs_encryption_by_default" "ebs_encrypt" {
@@ -167,3 +185,13 @@ resource "aws_volume_attachment" "ebs_attach" {
   instance_id = aws_instance.ec2[each.value.instance_name].id
   volume_id   = aws_ebs_volume.ebs_volumes[each.key].id
 }
+
+/*
+resource "aws_ec2_tag" "ec2_tag" {
+  for_each    = { for k, v in local.ec2 : k => v if lookup(v, "tags", "") != "" }
+  resource_id = aws_instance.ec2[each.key].id
+  key         = split(":", each.value.tags)[0]
+  value       = split(":", each.value.tags)[1]
+}
+*/
+
