@@ -1,51 +1,15 @@
-name: Terraform Code Review
+name: Prevent Direct Pushes to Main
 
-on:
-  pull_request:
+on: 
+  push:
     branches:
-      - main # or your default branch
+      - main
 
 jobs:
-  terraform:
+  prevent_push:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Validate Terraform configuration
-        run: terraform validate
-
-      - name: Run terraform fmt
-        run: terraform fmt -check
-
-  mandatory_approval:
-    runs-on: ubuntu-latest
-    needs: terraform
-
-    steps:
-      - name: Enforce code review
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const { GITHUB_TOKEN } = process.env;
-            const octokit = github.getOctokit(GITHUB_TOKEN);
-
-            const response = await octokit.pulls.listReviews({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            });
-
-            const approvals = response.data.filter(review => review.state === "APPROVED");
-
-            if (approvals.length === 0) {
-              core.setFailed("No approval found for this pull request");
-            }
-
-      - name: Prevent merge without approval
-        if: failure()
-        run: exit 1
+    - name: Fail if this is a push to the main branch
+      run: |
+        echo "Direct pushes to the main branch are not allowed."
+        exit 1
