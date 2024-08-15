@@ -1,0 +1,39 @@
+resource "aws_kms_key" "ebs_encryption" {
+  description = "Managed key for EBS encryption"
+}
+
+resource "aws_kms_key" "cross_region_encryption" {
+  provider    = aws.region2
+  description = "KMS key for cross region backup encryption"
+}
+
+############################################################
+
+resource "aws_backup_vault" "backup-vault" {
+  name        = "${var.site}-backup-vault"
+  kms_key_arn = aws_kms_key.ebs_encryption.arn
+}
+
+resource "aws_backup_vault" "cross_region_backup_vault" {
+  provider    = aws.region2
+  name        = "${var.site}-cross-region-backup-vault"
+  kms_key_arn = aws_kms_key.cross_region_encryption.arn
+}
+
+resource "aws_backup_plan" "backup-plan" {
+  name = "${var.site}-backup-plan"
+  rule {
+    rule_name         = "${var.site}-backup-rule"
+    target_vault_name = aws_backup_vault.backup-vault.name
+    schedule          = "cron(30 19 * * ? *)"
+    lifecycle {
+      delete_after = 7
+    }
+    copy_action {
+      lifecycle {
+        delete_after = 7
+      }
+      destination_vault_arn = aws_backup_vault.cross_region_backup_vault.arn
+    }
+  }
+}

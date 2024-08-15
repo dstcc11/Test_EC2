@@ -1,3 +1,3 @@
-variable "site" {
-  default = "US2"
-}
+variable "site" {}
+variable "region" {}
+variable "region2" {}
