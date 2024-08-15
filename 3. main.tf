@@ -9,6 +9,11 @@ data "aws_subnet" "default" {
   }
 
   filter {
+    name   = "availability-zone"
+    values = [var.az1]
+  }
+
+  filter {
     name   = "default-for-az"
     values = ["true"]
   }
