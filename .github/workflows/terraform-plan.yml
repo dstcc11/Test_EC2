@@ -6,7 +6,7 @@ on:
 env:
   TF_CLOUD_ORGANIZATION: "KuTest"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "test-gt-actions"
+  TF_WORKSPACE: "Test_EC2"
   CONFIG_DIRECTORY: "./"
 
 jobs:
