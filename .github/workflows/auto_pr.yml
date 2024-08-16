@@ -3,7 +3,7 @@ name: Auto PR
 on:
   push:
     branches:
-      - branch-jerome
+      - "**"
 
 jobs:
   create-pull-request:
@@ -19,6 +19,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         branch: your-branch-name
         base: main
-        title: 'Auto PR: Merge changes from your-branch-name'
+        title: 'Auto PR: Merge changes from ${{ github.ref }}'
         body: |
           This is an automatically generated pull request from the GitHub Action workflow.
