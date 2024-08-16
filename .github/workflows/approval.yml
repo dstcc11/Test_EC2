@@ -1,21 +1,16 @@
-name: Create Pull Request
+name: Code Owner Approval
 
 on:
-  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
     branches:
-      - feature/*  # Adjust the branch pattern as needed
+      - main
 
 jobs:
-  create-pr:
+  approval:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Require Code Owner Approval
+        uses: actions/require-code-owner-approval@v1
         with:
-          node-version: 18  # Update Node.js version
-      - uses: peter-evans/create-pull-request@v5  # Update action version
-        with:
-          title: Automatic Pull Request for ${{ github.ref }}
-          body: This pull request was automatically created from branch ${{ github.ref }}.
-          branch: main
-          commit-message: Auto-generated commit
+          branches: main
