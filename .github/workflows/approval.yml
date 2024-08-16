@@ -15,7 +15,6 @@ jobs:
           node-version: 18  # Update Node.js version
       - uses: peter-evans/create-pull-request@v5  # Update action version
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           title: Automatic Pull Request for ${{ github.ref }}
           body: This pull request was automatically created from branch ${{ github.ref }}.
           branch: main
