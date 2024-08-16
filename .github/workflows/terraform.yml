@@ -1,34 +1,24 @@
-name: WORKFLOW
-
+name: Terraform Plan and Apply
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main  # Replace with your branch name if you use a different default branch
 
 jobs:
   terraform:
-    name: "Terraform"
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.1.7
-        cli_config_credentials_token: ${{ secrets. TF_API_TOKEN }}
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Init
-      id: init
-      run: terraform init
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
 
-    - name: Terraform Validate
-      id: validate
-      run: terraform validate -no-color
-
-    - name: Terraform Plan
-      id: plan
-      run: terraform plan -no-color -input=false
-
-    - name: Terraform Apply
-      id: apply
-      run: terraform apply -auto-approve -input=false
+      - name: Terraform Cloud Apply
+        env:
+          TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+        run: terraform cloud apply -auto-approve tfplan
