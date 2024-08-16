@@ -2,7 +2,8 @@ name: Create Pull Request
 
 on:
   push:
-    branches: "**"
+    branches:
+      - feature/*  # Adjust the branch pattern as needed
 
 jobs:
   create-pr:
@@ -11,10 +12,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
-      - uses: peter-evans/create-pull-request@v4
+          node-version: 18  # Update Node.js version
+      - uses: peter-evans/create-pull-request@v5  # Update action version
         with:
-          title: Automatic Pull Request
-          body: This pull request was automatically created.
-          branch: main  # Replace with your base branch
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: Automatic Pull Request for ${{ github.ref }}
+          body: This pull request was automatically created from branch ${{ github.ref }}.
+          branch: main
           commit-message: Auto-generated commit
