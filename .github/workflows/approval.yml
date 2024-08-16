@@ -1,0 +1,20 @@
+name: Create Pull Request
+
+on:
+  push:
+    branches: "**"
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - uses: peter-evans/create-pull-request@v4
+        with:
+          title: Automatic Pull Request
+          body: This pull request was automatically created.
+          branch: main  # Replace with your base branch
+          commit-message: Auto-generated commit
