@@ -14,23 +14,33 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 'latest'
 
       - name: Authenticate with Terraform Cloud
         env:
           TERRAFORM_TOKEN: ${{ secrets.TERRAFORM_TOKEN }}
         run: |
+          echo "Terraform Cloud token is set."
+          echo "TERRAFORM_TOKEN=$TERRAFORM_TOKEN" >> $GITHUB_ENV
 
       - name: Terraform Init
         run: terraform init
 
       - name: Run Terraform Plan
+        id: terraform-plan
         run: terraform plan -no-color
 
       - name: Merge PR if Terraform Plan succeeds
-        if: success()
-        uses: peter-evans/repository-dispatch@v1
+        if: steps.terraform-plan.outcome == 'success'
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          event-type: merge
-          client-payload: '{"ref":"main","sha":"${{ github.sha }}","merge_method":"rebase"}'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pull_number = github.context.issue.number;
+            await github.pulls.merge({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              pull_number: pull_number,
+              merge_method: 'rebase'
+            });
