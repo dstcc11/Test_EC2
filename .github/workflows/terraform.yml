@@ -15,8 +15,7 @@ jobs:
       - name: Login to Terraform Cloud
         uses: hashicorp/setup-terraform@v2
         with:
-          cloud_token: ${{ secrets.TERRAFORM_TOKEN }}
-          cloud_hostname: app.terraform.io
+          cli_config_credentials_token: ${{ secrets.TERRAFORM_TOKEN }}
 
       - name: Terraform Init
         run: terraform init
