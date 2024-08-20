@@ -17,8 +17,8 @@ jobs:
         with:
           script: |
             const { data: checkRuns } = await github.rest.checks.listForRef({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
+              owner: github.context.repo.owner.login,
+              repo: github.context.repo.name,
               ref: github.context.sha
             });
 
