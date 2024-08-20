@@ -13,7 +13,7 @@ jobs:
       - name: Check status checks
         uses: actions/github-script@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         with:
           script: |
             const { data: checkRuns } = await github.rest.checks.listForRef({
