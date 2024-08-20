@@ -16,7 +16,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const { data: checkRuns } = await github.checks.listForRef({
+            const { data: checkRuns } = await github.rest.checks.listForRef({
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
               ref: github.context.sha
