@@ -1,4 +1,4 @@
-name: Require Passing Checks for Merge
+name: Require Successful Terraform Plan for Merge
 
 on:
   pull_request:
@@ -6,50 +6,51 @@ on:
       - main
 
 jobs:
-  checks:
+  terraform-plan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Run checks
-        uses: actions/checkout@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          terraform_version: 'latest'
 
-      - name: Require passing checks
-        if: github.event.pull_request.state == 'opened' && github.event.action == 'review_requested'
+      - name: Terraform Plan
+        run: |
+          terraform init
+          terraform plan -no-color
+
+      - name: Check Terraform Plan Output
+        if: contains(steps.terraform-plan.outputs.stdout, 'No changes')
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const checks = await github.checks.listForRef({
+            github.pulls.update({
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
-              ref: github.context.pullRequest.head.sha
+              pull_number: github.context.pullRequest.number,
+              state: 'unblocked'
+            })
+
+      - name: Block Merge if Terraform Plan Fails
+        if: !contains(steps.terraform-plan.outputs.stdout, 'No changes')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              issue_number: github.context.pullRequest.number,
+              body: 'Cannot merge until Terraform plan is successful'
             });
 
-            const failingChecks = checks.data.check_runs.filter(check => check.status === 'completed' && check.conclusion !== 'success');
-
-            if (failingChecks.length > 0) {
-              github.issues.createComment({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: github.context.pullRequest.number,
-                body: 'Cannot merge until all checks pass'
-              });
-
-              github.pulls.update({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                pull_number: github.context.pullRequest.number,
-                state: 'blocked'
-              });
-            } else {
-              github.pulls.update({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                pull_number: github.context.pullRequest.number,
-                state: 'unblocked'
-              });
-            }
+            github.pulls.update({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              pull_number: github.context.pullRequest.number,
+              state: 'blocked'
+            });

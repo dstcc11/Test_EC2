@@ -7,13 +7,13 @@ provider "aws" {
   region = var.region2 # Update with the desired region for the backup copy
 }
 
-terraform { 
-  cloud { 
-    
-    organization = "KuTest" 
+terraform {
+  cloud {
 
-    workspaces { 
-      name = "Test_EC2" 
-    } 
-  } 
+    organization = "KuTest"
+
+    workspaces {
+      name = "Test_EC2"
+    }
+  }
 }
