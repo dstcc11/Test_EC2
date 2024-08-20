@@ -1,4 +1,4 @@
-name: Require Successful Terraform Plan for Merge
+name: Terraform Plan and Merge
 
 on:
   pull_request:
@@ -6,52 +6,26 @@ on:
       - main
 
 jobs:
-  terraform-plan:
+  terraform-plan-merge:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 'latest'
+        uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Plan
-        id: terraform-plan
-        run: |
-          terraform init
-          terraform plan -no-color
-          echo "::set-output name=plan_output::$(terraform plan -no-color)"
+      - name: Terraform Init
+        run: terraform init
 
-      - name: Check Terraform Plan Output
-        if: contains(steps.terraform-plan.outputs.plan_output, 'No changes')
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.pulls.update({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              pull_number: github.context.pullRequest.number,
-              draft: false
-            })
+      - name: Run Terraform Plan
+        run: terraform plan -no-color
 
-      - name: Block Merge if Terraform Plan Fails
-        if: !contains(steps.terraform-plan.outputs.plan_output, 'No changes')
-        uses: actions/github-script@v6
+      - name: Merge PR if Terraform Plan succeeds
+        if: success()
+        uses: peter-evans/repository-dispatch@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.issues.createComment({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              issue_number: github.context.pullRequest.number,
-              body: 'Cannot merge until Terraform plan is successful'
-            });
-            github.pulls.update({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              pull_number: github.context.pullRequest.number,
-              draft: true
-            })
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: merge
+          client-payload: '{"ref":"main","sha":"${{ github.sha }}","merge_method":"rebase"}'
