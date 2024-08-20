@@ -1,7 +1,7 @@
 # CODEOWNERS file
 
 # This sets the default code owners for the entire repository
-*       @kubra-bp/nsg_admin
+*       @dstcc11
 
 # Specific paths can have different code owners
 # For example, if you have a directory named 'src' and want a different owner
