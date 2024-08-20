@@ -22,9 +22,10 @@ jobs:
         run: |
           terraform init
           terraform plan -no-color
+          echo "::set-output name=plan_output::$(terraform plan -no-color)"
 
       - name: Check Terraform Plan Output
-        if: contains(steps.terraform-plan.outputs.stdout, 'No changes')
+        if: contains(steps.terraform-plan.outputs.plan_output, 'No changes')
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -37,7 +38,7 @@ jobs:
             })
 
       - name: Block Merge if Terraform Plan Fails
-        if: !contains(steps.terraform-plan.outputs.stdout, 'No changes')
+        if: !contains(steps.terraform-plan.outputs.plan_output, 'No changes')
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
