@@ -1,48 +1,56 @@
-name: Terraform Plan Check
+name: Require Successful Terraform Plan for Merge
 
 on:
   pull_request:
     branches:
-      - main      # This will trigger the workflow for PRs targeting the 'main' branch
-    paths:
-      - '**/*.tf'  # Trigger this action only if Terraform files change
-    types:
-      - opened
-      - synchronize
-      - reopened
+      - main
 
 jobs:
-  terraform:
-    name: Run Terraform Plan
+  terraform-plan:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.4.5  # Specify your Terraform version
-
-      - name: Terraform Init
-        run: terraform init
+          terraform_version: 'latest'
 
       - name: Terraform Plan
-        id: plan
-        run: terraform plan > terraform.plan
-
-      - name: Upload Terraform Plan Output
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-plan
-          path: terraform.plan
-
-      - name: Check for Plan Success
         run: |
-          if grep -q "No changes." terraform.plan; then
-            echo "Terraform plan successful."
-          else
-            echo "Terraform plan failed."
-            exit 1
-          fi
+          terraform init
+          terraform plan -no-color
+
+      - name: Check Terraform Plan Output
+        if: contains(steps.terraform-plan.outputs.stdout, 'No changes')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.pulls.update({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              pull_number: github.context.pullRequest.number,
+              state: 'unblocked'
+            })
+
+      - name: Block Merge if Terraform Plan Fails
+        if: !contains(steps.terraform-plan.outputs.stdout, 'No changes')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              issue_number: github.context.pullRequest.number,
+              body: 'Cannot merge until Terraform plan is successful'
+            });
+
+            github.pulls.update({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              pull_number: github.context.pullRequest.number,
+              state: 'blocked'
+            });
