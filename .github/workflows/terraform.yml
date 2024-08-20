@@ -13,13 +13,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Login to Terraform Cloud
-        uses: appleboy/terraform-cloud-login-action@v1
+        uses: hashicorp/setup-terraform@v2
         with:
-          token: ${{ secrets.TERRAFORM_TOKEN }}
-          organization: your-org-name
-          workspace: your-workspace-name
+          cloud_token: ${{ secrets.TERRAFORM_TOKEN }}
+          cloud_hostname: app.terraform.io
 
       - name: Run Terraform Cloud Plan
         run: |
-          terraform login ${{ secrets.TERRAFORM_TOKEN }}
           terraform plan -input=false
