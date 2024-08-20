@@ -18,6 +18,7 @@ jobs:
           terraform_version: 'latest'
 
       - name: Terraform Plan
+        id: terraform-plan
         run: |
           terraform init
           terraform plan -no-color
@@ -32,7 +33,7 @@ jobs:
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
               pull_number: github.context.pullRequest.number,
-              state: 'unblocked'
+              draft: false
             })
 
       - name: Block Merge if Terraform Plan Fails
@@ -52,5 +53,5 @@ jobs:
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
               pull_number: github.context.pullRequest.number,
-              state: 'blocked'
+              draft: true
             });
