@@ -1,36 +1,25 @@
-name: Terraform Plan and Merge
+name: Terraform Cloud Plan
 
 on:
-  pull_request:
+  push:
     branches:
       - main
 
 jobs:
-  terraform-plan-merge:
+  terraform-cloud-plan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Authenticate with Terraform Cloud
-        env:
-          TERRAFORM_TOKEN: ${{ secrets.TERRAFORM_TOKEN }}
-        run: |
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Run Terraform Plan
-        run: terraform plan -no-color
-
-      - name: Merge PR if Terraform Plan succeeds
-        if: success()
-        uses: peter-evans/repository-dispatch@v1
+      - name: Login to Terraform Cloud
+        uses: appleboy/terraform-cloud-login-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          event-type: merge
-          client-payload: '{"ref":"main","sha":"${{ github.sha }}","merge_method":"rebase"}'
+          token: ${{ secrets.TERRAFORM_TOKEN }}
+          organization: your-org-name
+          workspace: your-workspace-name
+
+      - name: Run Terraform Cloud Plan
+        run: |
+          terraform login ${{ secrets.TERRAFORM_TOKEN }}
+          terraform plan -input=false
