@@ -1,0 +1,26 @@
+name: Check Status Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check status checks
+        uses: actions/github-script@v6
+        script: |
+          const status = github.actions.getStatus({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            ref: github.context.sha
+          });
+          if (status.status === 'success') {
+            console.log('All status checks have passed!');
+          } else {
+            console.log('Not all status checks have passed.');
+            github.actions.setFailed('Not all status checks have passed.');
+          }
