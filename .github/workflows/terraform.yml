@@ -17,40 +17,50 @@ jobs:
         with:
           terraform_version: 'latest'
 
+      - name: Terraform Init
+        run: terraform init
+
       - name: Terraform Plan
+        id: terraform-plan
         run: |
-          terraform init
-          terraform plan -no-color
+          terraform plan -no-color > plan_output.txt
+        continue-on-error: true
 
       - name: Check Terraform Plan Output
-        if: contains(steps.terraform-plan.outputs.stdout, 'No changes')
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.pulls.update({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              pull_number: github.context.pullRequest.number,
-              state: 'unblocked'
-            })
+        id: check-output
+        run: |
+          if grep -q 'No changes' plan_output.txt; then
+            echo "No changes detected"
+            echo "::set-output name=status::success"
+          else
+            echo "Changes detected"
+            echo "::set-output name=status::failure"
+          fi
 
-      - name: Block Merge if Terraform Plan Fails
-        if: !contains(steps.terraform-plan.outputs.stdout, 'No changes')
+      - name: Report Terraform Plan Status
         uses: actions/github-script@v6
+        if: ${{ steps.check-output.outputs.status == 'failure' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.issues.createComment({
+            await github.pulls.createReview({
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
-              issue_number: github.context.pullRequest.number,
-              body: 'Cannot merge until Terraform plan is successful'
+              pull_number: github.context.issue.number,
+              event: 'REQUEST_CHANGES',
+              body: 'Terraform plan has changes. Please fix before merging.'
             });
 
-            github.pulls.update({
+      - name: Approve PR if No Changes
+        if: ${{ steps.check-output.outputs.status == 'success' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.pulls.createReview({
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
-              pull_number: github.context.pullRequest.number,
-              state: 'blocked'
+              pull_number: github.context.issue.number,
+              event: 'APPROVE',
+              body: 'Terraform plan has no changes. Ready for merging.'
             });
