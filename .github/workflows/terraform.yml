@@ -1,4 +1,4 @@
-name: Check Status Checks
+name: Require Passing Checks for Merge
 
 on:
   pull_request:
@@ -6,27 +6,50 @@ on:
       - main
 
 jobs:
-  check-status:
+  checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Check status checks
-        uses: actions/github-script@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run checks
+        uses: actions/checkout@v3
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Require passing checks
+        if: github.event.pull_request.state == 'opened' && github.event.action == 'review_requested'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: checkRuns } = await github.rest.checks.listForRef({
-              owner: github.context.repo.owner.login,
-              repo: github.context.repo.name,
-              ref: github.context.sha
+            const checks = await github.checks.listForRef({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              ref: github.context.pullRequest.head.sha
             });
 
-            const allChecksPassed = checkRuns.check_runs.every(check => check.conclusion === 'success');
+            const failingChecks = checks.data.check_runs.filter(check => check.status === 'completed' && check.conclusion !== 'success');
 
-            if (allChecksPassed) {
-              console.log('All status checks have passed!');
+            if (failingChecks.length > 0) {
+              github.issues.createComment({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                issue_number: github.context.pullRequest.number,
+                body: 'Cannot merge until all checks pass'
+              });
+
+              github.pulls.update({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: github.context.pullRequest.number,
+                state: 'blocked'
+              });
             } else {
-              console.log('Not all status checks have passed.');
-              core.setFailed('Not all status checks have passed.');
+              github.pulls.update({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: github.context.pullRequest.number,
+                state: 'unblocked'
+              });
             }
