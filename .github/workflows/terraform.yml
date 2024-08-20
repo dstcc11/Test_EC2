@@ -12,15 +12,21 @@ jobs:
       - uses: actions/checkout@v3
       - name: Check status checks
         uses: actions/github-script@v6
-        script: |
-          const status = github.actions.getStatus({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            ref: github.context.sha
-          });
-          if (status.status === 'success') {
-            console.log('All status checks have passed!');
-          } else {
-            console.log('Not all status checks have passed.');
-            github.actions.setFailed('Not all status checks have passed.');
-          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const { data: checkRuns } = await github.rest.checks.listForRef({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              ref: github.context.sha
+            });
+
+            const allChecksPassed = checkRuns.check_runs.every(check => check.conclusion === 'success');
+
+            if (allChecksPassed) {
+              console.log('All status checks have passed!');
+            } else {
+              console.log('Not all status checks have passed.');
+              core.setFailed('Not all status checks have passed.');
+            }
