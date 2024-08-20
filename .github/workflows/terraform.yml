@@ -18,6 +18,8 @@ jobs:
           cloud_token: ${{ secrets.TERRAFORM_TOKEN }}
           cloud_hostname: app.terraform.io
 
+      - name: Terraform Init
+        run: terraform init
+
       - name: Run Terraform Cloud Plan
-        run: |
-          terraform plan -input=false
+        run: terraform plan -input=false
