@@ -48,10 +48,9 @@ jobs:
               issue_number: github.context.pullRequest.number,
               body: 'Cannot merge until Terraform plan is successful'
             });
-
             github.pulls.update({
               owner: github.context.repo.owner,
               repo: github.context.repo.repo,
               pull_number: github.context.pullRequest.number,
               draft: true
-            });
+            })
