@@ -140,7 +140,10 @@ resource "aws_instance" "ec2" {
   }
   tags = merge(
     lookup(each.value, "tags", {}),
-    { Name = "ec2-${each.key}" }
+    {
+      "Name"       = "ec2-${each.key}",
+      "KUBRA/Role" = "ec2"
+    }
   )
 
 }
