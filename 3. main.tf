@@ -185,13 +185,3 @@ resource "aws_volume_attachment" "ebs_attach" {
   instance_id = aws_instance.ec2[each.value.instance_name].id
   volume_id   = aws_ebs_volume.ebs_volumes[each.key].id
 }
-
-/*
-resource "aws_ec2_tag" "ec2_tag" {
-  for_each    = { for k, v in local.ec2 : k => v if lookup(v, "tags", "") != "" }
-  resource_id = aws_instance.ec2[each.key].id
-  key         = split(":", each.value.tags)[0]
-  value       = split(":", each.value.tags)[1]
-}
-*/
-
