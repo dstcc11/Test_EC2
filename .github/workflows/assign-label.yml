@@ -8,7 +8,7 @@ on:
 
 jobs:
   assign-label:
-    uses: ./.github/workflows/assign-label.yml@main
+    uses: dstcc11/Test_EC2/.github/workflows/assign-label.yml@main
     with:
       config-path: ".github/config/auto-label-pulls.json"
     secrets:
