@@ -9,14 +9,8 @@ on:
 
 jobs:
   assign-label:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        
-      - name: Run assign-label job
-        uses: dstcc11/Test_EC2/.github/workflows/assign-label.yml@main
-        with:
-          config-path: ".github/config/auto-label-pulls.json"
-        secrets:
-          token: ${{ secrets.GHACTION_TOKEN }}
+    uses: dstcc11/Test_EC2/.github/workflows/assign-label.yml@main
+    with:
+      config-path: ".github/config/auto-label-pulls.json"
+    secrets:
+      token: ${{ secrets.GHACTION_TOKEN }}
