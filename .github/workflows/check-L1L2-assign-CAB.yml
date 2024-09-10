@@ -1,0 +1,352 @@
+name: Change Management
+
+# On a Pull request review submit event, this GitHub action will be triggered.
+on: 
+  workflow_call:
+    inputs:
+      teams:           # Team name required for 3rd level of approval e.g CAB_team.
+        required: true
+        type: string
+      owner:           # GitHub organization name.
+        required: true
+        type: string
+    secrets:
+      token:           # The variable contains the GitHub token to perform actions.
+        required: true
+
+jobs:
+  Approval:
+
+    # The steps below will only be executed if the target branch is 'main' OR 'master' to denote a Production update.
+    if: ${{ (github.event.pull_request.base.ref == 'main') || (github.event.pull_request.base.ref == 'master') || (github.event.pull_request.base.ref == 'main/prod-cde') }}
+    runs-on: ubuntu-latest
+    steps:
+
+      # Checkout scripts on agent server.
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Run script to verify 1st level and 2nd level approval status.
+      - name: Check PR Reviewed By Subteams
+        run: |
+          # Extract PR number from current PR Path.
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          echo PR Number = $pr_number
+
+          # Copy inputs variable data to local variable for execution.
+          teams=("${{ inputs.teams }}")
+          owner="${{ inputs.owner }}"
+
+          # Fetch all submitted responses by reviewer using GitHub API copy to temp.txt file.
+          curl -s -X GET -H "Authorization: Bearer ${{ secrets.token }}" "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number/reviews?team_id=$team" > temp.txt
+
+             # ---------------------------------------------------------------
+             # Parse reviewer login id details from temp.txt.
+             # Remove the extra special character from response.
+             # Convert the string to an array to traverse using index.
+             # Get the length (count) of reviewer responses.
+             # ---------------------------------------------------------------
+             login_response=$(cat "temp.txt"| grep login | awk '{print $2}')
+             login_response=$(echo "$login_response" | tr -d '"' | tr -d ',')
+             login_response=($login_response)
+             len=${#login_response[@]}
+             
+             # ---------------------------------------------------------------
+             # Parse reviewer login id details from temp.txt.
+             # Remove the extra special character from response.
+             # Convert the string to an array to traverse using index.
+             # Check if response having "DISMISSED" state and get count of it.
+             # ---------------------------------------------------------------
+             state_response=$(cat "temp.txt" | grep state | awk '{print $2}')
+             state_response=$(echo "$state_response" | tr -d '"' | tr -d ',')
+             state_response=($state_response)
+             state_dismiss=$(echo ${state_response[@]} | grep -o "DISMISSED" | wc -w)
+             echo state_dismiss= $state_dismiss
+
+             # Get reviewer response id to use for further execution.
+             # Convert string to array to traverse using index.
+             id_response=$(cat "temp.txt"| grep -B 3 login | awk '{print $2}' | grep -o '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*')
+             id_response=($id_response)
+
+             #-----------------------------------------------------------
+             # Get code owners teams from CODEOWNERS file in variable.
+             # Remove duplicate values from string.
+             # Convert to array.
+             # Calculate the team count.
+             #-----------------------------------------------------------
+             team_name=$(cat .github/CODEOWNERS | grep -oPw "$owner/[^. ]*")
+             team_name=$(echo $team_name | xargs -n1 | sort -u | xargs)
+             team_name=($team_name)                  
+             team_len=${#team_name[@]}
+             
+             approver_count=0    # Declare variable to calculate approval count.
+             level2_check=0      # Declare variable to set flag once L1 and L2 approval done.
+
+             #-----------------------------------------------------------------
+             # Get member list from subteams using GitHub api.
+             # Get member login id from response data from member_check file.
+             # Remove extra special character from response.
+             #------------------------------------------------------------------
+             function check_subteam_member(){
+
+              # Check if the file is already present on the server.
+              if [ -f "member_check.txt" ]; then
+                  rm member_check.txt
+              fi
+              local i=1      # Declare a variable for iteration.
+              touch member_check.txt
+
+              # Define the infinite loop until the last page.
+              while true; do
+
+                  curl -s -X GET -H "Authorization: Bearer ${{ secrets.token }}" "https://api.github.com/orgs/$owner/teams/$1/members?page=$i" > member_check_temp.txt
+                  tempvar=$(cat member_check_temp.txt)
+
+                  # Check if the API response is empty, then only break the loop.
+                  if [[ $(echo $tempvar) == "[ ]" ]];then
+                      break
+                  fi
+                  i=$((i+1))
+                  cat member_check_temp.txt >> member_check.txt
+
+              done
+              local member_check_res=$(cat "member_check.txt"| grep login | awk '{print $2}')
+              member_check_res=$(echo "$member_check_res" | tr -d '"' | tr -d ',')
+              echo $member_check_res
+
+             } # End of function check_subteam_member
+
+             #-----------------------------------------------------------------
+             # Get member list from subteams using GitHub api.
+             # Get member login id from response data from member_check file.
+             # Remove extra special character from response.
+             #------------------------------------------------------------------
+             function dismiss_approval(){
+
+               for (( c=0; c<$len; c++ )); do
+
+               # Check if response state is approved to dismiss that state.
+               if [[ ${state_response[$c]} == "APPROVED" || ${state_response[$c]} == "CHANGES_REQUESTED" ]]; then
+
+                  # GitHub API to dismiss last approved state ID.
+                  gh api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/${{ github.repository }}/pulls/$pr_number/reviews/${id_response[$c]}/dismissals -f message='PR dismissed by workflow due to changes requested by reviewers. Please update and notify reviewers after change is committed.' -f event='DISMISS' > output.log
+               
+               fi
+               done
+
+               # Subteams assigned back to PR.
+               for (( i=0; i<team_len; i++ )); do 
+
+                  # Check if subteams belongs to organization.
+                  if [[ ${team_name[$i]} == *$owner* ]]; then
+                  
+                     # Copy team name to variable with removal of special char.
+                     CO_Team=$(echo ${team_name[$i]} | cut -d "/" -f 2)
+
+                     # GitHub API to assign subteams to PR.
+                     gh pr edit $pr_number --add-reviewer "$owner/$CO_Team" > output.log
+                  fi
+               done
+               echo "All previous user approvals have been dismissed and subteams defined in CODEOWNERS have been re-assigned to review the PR once again."     
+
+             } # End of function dismiss_approval.
+
+             # -------------------------------------------------------------
+             # Designed a function that solely returns the cab approval flag.
+             #---------------------------------------------------------------
+             function check_cab_review(){
+
+              # Call to check_subteam_member function to check if member part of CAB Team.
+              local cabmember_check_response=`check_subteam_member $teams`
+              local cab_approval=0    # Declare variable to check if cab team approve PR status.
+
+              # Loop to check all submitted response from CAB Team.
+              for (( i=2; i<$len; i++ )); do    #loop start here
+                 local temp_response=${login_response[$i]}  # Copy value to temporary variable.
+                 local cabmember_check=0                    # Declare variable to check member belongs to CAB teams.
+
+                 # Check if previous reviewer should not be review again as Cab members if that belongs to multiple Team.
+                 if [[ $(echo ${approval_userid[*]}) != *$temp_response* ]]; then
+
+                     # Check if reviewer belongs to CAB Team.
+                     if [[ $cabmember_check_response == *$temp_response* ]]; then
+                        cabmember_check=1
+
+                        # Check if that member response is "Approved".
+                        if [[ ${state_response[$i]} == "APPROVED" ]]; then
+                            cab_approval=1
+                        fi
+                     fi
+                 fi
+              done #loop end here
+              echo $cab_approval
+
+             } # check_cab_review function end here
+          
+             # Loop to validate each response capture from GitHub API.
+             for (( i=0; i<$len; i++ )); do    # 1st loop start here.
+                  temp_response=${login_response[$i]}  # Copy value to temporary variable.
+                  member_check=0      # Declare variable to check member belongs to subteams.
+
+                  # Check if approval belongs to subteams member.
+                  for (( j=0; j<$team_len; j++ )); do   # 2nd loop start here.
+
+                            # Copy one by one team names to Codeowners_Team <CO_Team> variable.
+                            CO_Team=$(echo ${team_name[$j]} | cut -d "/" -f 2)
+
+                            # Call to check_subteam_member function to check if member part of CODEOWNERS.
+                            member_check_response=`check_subteam_member $CO_Team`
+                            
+                            # Check if reviewer belongs to CODEOWNERS subteams.
+                            if [[ $member_check_response == *$temp_response* ]]; then
+                               member_check=1
+                               team_response=$(echo $CO_Team | tr 'a-z' 'A-Z')
+                            fi                       
+                  done  # 2nd loop end here.
+
+                  # Check if member belongs to subteams.
+                  if [[ $member_check == 1 ]]; then
+
+                    # Check if that member response is "Approved".
+                    if [[ ${state_response[$i]} == "APPROVED" ]]; then
+
+                        # Check if duplicate response by same userid.
+                        if [[ ${duplicate_check[*]} != *$temp_response* ]]; then 
+                            duplicate_check+=("${temp_response}")
+                            let approver_count=approver_count+1
+
+                            # Check if approver team belongs to QA.
+                            if [[ $team_response == *QA* ]]; then
+
+                                if [[ ${approval_flag[*]} != *QA* ]]; then
+                                  approval_flag+=QA
+                                  approval_userid+=($temp_response)
+                                  echo "$temp_response has approved the PR from team $team_response."
+                                  echo "Status = ${state_response[$i]}"
+                                fi 
+                            fi
+
+                            # Check if approver team belongs to Manager.
+                            if [[ $team_response == *MANAGERS* || $team_response == *BACKUP_APPROVERS* ]]; then
+                                  
+                                if [[ ${approval_flag[*]} != *MANAGERS* ]]; then  
+                                  approval_flag+=MANAGERS
+                                  approval_userid+=($temp_response)
+                                  echo "$temp_response has approved the PR from team $team_response."
+                                  echo "Status = ${state_response[$i]}"
+                                fi  
+                            fi
+                      fi  
+
+                    # Check if response "CHANGES_REQUESTED" and calculate the length of last response for "CHANGES_REQUESTED".
+                    elif [[ ${state_response[$i]} == "CHANGES_REQUESTED" ]]; then
+                       len_temp=$(echo $len-1 | bc)
+                       if [[ $i == $len_temp ]]; then
+                       echo "$temp_response has not approved the PR with the PR Status = ${state_response[$i]}."
+                       dismiss_approval_result=`dismiss_approval`
+                       echo $dismiss_approval_result
+                       exit 1
+                       fi  
+                    fi           
+                  fi    
+            done  # 1st loop end here.         
+
+            # If Level 1 and Level 2 reviewers have approved the PR.
+            if [[ ${approval_flag[*]} == *QA* && ${approval_flag[*]} == *MANAGERS* ]]; then
+                  echo "Level 1 and Level 2 reviewers have approved the PR."
+
+                  # Get the cab approval flag to decide to assign the cab team to PR.
+                  check_cab_approval=`check_cab_review`
+                  if [[ $check_cab_approval == 0 ]]; then
+
+                    # Assign PR to CAB team.
+                    gh pr edit $pr_number --add-reviewer "$owner/$teams"
+                    echo "Assign Level 3 CAB team to review the PR for final approval."
+
+                  fi
+
+                  # Level2 flag set to 1 for CAB review checks.
+                  level2_check=1
+            fi
+
+            # If approval from QA team but not from manager display message.
+            if [[ ${approval_flag[*]} == *QA* && ${approval_flag[*]} != *MANAGERS* ]]; then
+                  echo "Level 2 Manager approval is required."
+                  exit 1
+            fi
+            
+            # If approval from manager subteams but not from QA team display a warning message.
+            if [[ ${approval_flag[*]} != *QA* && ${approval_flag[*]} == *MANAGERS* ]]; then
+                  echo "Level 1 peer review / QA approval is required."
+                  exit 1
+            fi
+            
+            # Count approvals and display message.
+            if [[ $approver_count == 0 ]]; then
+                  echo "At least two approvals are required (Level 1 and Level 2) from the CODEOWNERS subteams."
+                  exit 1
+            fi
+
+            #--------------------------------------------
+            # CAB team approval check script start here.
+            #--------------------------------------------
+            cab_approval=0    # Declare variable to check if cab team approve PR status.
+
+            # level2_check is equal to 1 that means L1 and L2 approval completed.
+            if [[ $level2_check == 1 ]]; then
+
+              # Call to check_subteam_member function to check if member part of CAB Team.
+              cabmember_check_response=`check_subteam_member $teams`
+      
+              # Loop to check all submitted response from CAB Team.
+              for (( i=2; i<$len; i++ )); do    # 3rd loop start here
+                 temp_response=${login_response[$i]}  # Copy value to temporary variable.
+                 cabmember_check=0                    # Declare variable to check member belongs to CAB teams.
+
+                 # Check if previous reviewer should not be review again as Cab members if that belongs to multiple Team.
+                 if [[ $(echo ${approval_userid[*]}) != *$temp_response* && ${state_response[$i]} != "DISMISSED" ]]; then
+
+                     # Check if reviewer belongs to CAB Team.
+                     if [[ $cabmember_check_response == *$temp_response* ]]; then
+                        cabmember_check=1
+
+                        # Check if that member response is "Approved".
+                        if [[ ${state_response[$i]} == "APPROVED" ]]; then
+
+                            echo "$temp_response has approved the PR from $teams."
+                            echo "Status = ${state_response[$i]}"
+                            cab_approval=1
+                            exit 0
+
+                        # Check if that member response is "CHANGES_REQUESTED".
+                        elif [[ ${state_response[$i]} == "CHANGES_REQUESTED" ]]; then
+                            echo "$temp_response has not approved the PR from $teams."
+                            echo "Status = ${state_response[$i]}"
+                            dismiss_approval_result=`dismiss_approval`
+                            echo $dismiss_approval_result
+                            exit 1
+                        fi
+                      else
+                         echo "Level 3 Review - $temp_response is not a member of $teams."
+                         exit 1
+                     fi
+                 fi  
+              done #3rd loop end here.
+
+              # Check if CAB Team approval is pending.         
+              if [[ $cab_approval == 0 ]]; then
+                echo "A member from CAB must approved the PR before merging. Please ensure that one member from CAB signs off on this change."
+                exit 1
+              fi   
+
+            fi
+
+            # Display message if member does not belongs to subteams and CAB Team.
+            if [[ $member_check == 0 ]]; then
+              if [[ $cabmember_check == 0 ]]; then
+              echo "$temp_response does not belong to any of the specified subteams found in the CODEOWNERS file."
+              fi
+            fi             
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.token}}

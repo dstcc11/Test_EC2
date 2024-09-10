@@ -1,0 +1,99 @@
+name: copy workflow
+
+# Manually this GitHub action will be triggered.
+on:
+  workflow_call:
+    inputs:
+      owner:             # GitHub organization name
+        required: true
+        type: string
+      source_repo:       # Source repository name
+        required: true
+        type: string
+      user_email:        # Author user email
+        required: true
+        type: string
+      user_name:         # Author user name
+        required: true
+        type: string
+      repo_list_path:    # Repo list file path in config
+        required: true
+        type: string      
+    secrets:
+      token:             # The variable contains the GitHub token to perform actions
+        required: true
+
+jobs:
+  copy_workflow:
+    runs-on: ubuntu-latest
+    steps:
+
+      # Checkout scripts on agent server
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Script to copy reusable workflow to listed repo
+      - name: Copy workflow
+        run: |
+
+          # Check if source directory is available else create it
+          if [ -d "source" ]; then
+            echo "source directory found"
+          else
+            mkdir source
+          fi
+          cd source
+
+          # Removed all existing files before clone
+          rm -rf *
+          echo "workspace cleaned.."
+          owner=${{ inputs.owner }}              # Copy organization name to local variable
+          source_repo=${{ inputs.source_repo }}  # Copy source repository name
+
+          git config --global user.email ${{ inputs.user_email }} # Set auther user email
+          git config --global user.name ${{ inputs.user_name }}   # Set auther user name
+          
+          # Clone source repo to agent server
+          git clone -b main "https://$GITHUB_TOKEN@github.com/$owner/$source_repo.git"
+
+          # Create repo list file path
+          repo_file="$source_repo/${{ inputs.repo_list_path }}"
+          
+          while read -r line; do
+          #echo -e "$line"
+          
+          # Clone destination repository
+          dest_repo=$line
+          git clone -b main "https://$GITHUB_TOKEN@github.com/$owner/$dest_repo.git"
+          
+          # Check if .github folder available in repository root folder
+          if [ -d "$dest_repo/.github" ]; then
+            echo ".github directory found"
+          else
+            cd $dest_repo
+            mkdir .github
+            cd ..
+          fi
+
+          # Copy folders from source to destination repo
+          cp -rf $source_repo/github_reusable-workflow/* $dest_repo/.github/.
+          echo copying workflow to $dest_repo .github folder
+          cd $dest_repo
+
+          git_status=$(git status)
+          
+          # Check if files already there else copy it and then checkout to repo
+          if [[ $git_status == *"nothing to commit"* ]]; then
+            echo $dest_repo "repo is up to date"
+          else
+            git add .github/*
+            git commit -m "Approval workflow added"
+            git push "https://$GITHUB_TOKEN@github.com/$owner/$dest_repo.git" main
+            echo workflow copied to $dest_repo
+          fi
+          cd ..
+          done <$repo_file
+          
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
