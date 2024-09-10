@@ -10,16 +10,16 @@ Enter one of the options [Low] [Moderate] or [High] for risk assessment.
 ### Impact
 Enter one of the options [Low] [Medium] or [High] for impact.
 
-### KARP Review
-Enter the link (URL) of the latest KARP Review and specify the last reviewed date.
-
 ### Test Plan
 Enter details on what sort of testing will validate the changes.
 
 ### Back Out Plan
 Enter the actions to be taken to restore any associated service (including this one) if the change fails or partially fails.
 
-**(For Pull Request creator only!) Please check these once you have verified each of them. When done, you'll be able to merge.**
+
+
+
+###Please check these once you have verified each of them. When done, you'll be able to merge. (For Pull Request creator only!)###
 
 - [ ] You have verified that this pull request fulfills the story's scope/description.
 - [ ] You have verified that this pull request fulfills all story acceptance criteria.
