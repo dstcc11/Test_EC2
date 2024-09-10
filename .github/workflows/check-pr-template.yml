@@ -1,42 +1,70 @@
-name: PR Checks
+name: Pull Request Checks
 
 on:
   pull_request:
     types: [opened, edited]
 
 jobs:
-  check-pr-template:
+  check-template:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Check Risk Level
-        uses: gr2m/github-action-markdown-checkbox@v2
-        with:
-          file: pull_request_template.md
-          pattern: 'Risk Level'
-          failure-message: 'Please select a Risk Level'
-
-      - name: Check Impact
-        uses: gr2m/github-action-markdown-checkbox@v2
-        with:
-          file: pull_request_template.md
-          pattern: 'Impact'
-          failure-message: 'Please select an Impact'
-
-      - name: Check PR Creator Checkboxes
-        uses: gr2m/github-action-markdown-checkbox@v2
-        with:
-          file: pull_request_template.md
-          pattern: '\[ \] You have verified'
-          checkboxes: 6
-          failure-message: 'Please check all 6 checkboxes under "For Pull Request creator only!"'
-
-      - name: Fail workflow if any check failed
+      - name: Check Risk Level and Impact
+        id: check_risk_impact
         uses: actions/github-script@v6
         with:
-          github-script: |
-            if (github.event.issue.pull_requests && github.event.issue.pull_requests[0].merged === false) {
-              core.setFailed('Pull Request cannot be merged due to missing information in pull_request_template.md')
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('pull_request_template.md', 'utf8');
+
+            const riskChecked = content.includes('[ ] Low') ||
+              content.includes('[ ] Moderate') ||
+              content.includes('[ ] High');
+
+            const impactChecked = content.includes('[ ] Low') ||
+              content.includes('[ ] Moderate') ||
+              content.includes('[ ] High');
+
+            if (!riskChecked || !impactChecked) {
+              throw new Error('Risk Level and Impact must be selected!');
+            }
+            console.log('Risk Level and Impact checked successfully!');
+
+      - name: Check PR checklist
+        id: check_checklist
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('pull_request_template.md', 'utf8');
+
+            const checklistItems = [
+              '- [ ] You have verified that this pull request fulfills the story\'s scope/description.',
+              '- [ ] You have verified that this pull request fulfills all story acceptance criteria.',
+              '- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately.',
+              '- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service.',
+              '- [ ] Authorized personnel have reviewed this code and approved it.',
+              '- [ ] This change is ready for Demo to the product manager & rest of the team.',
+            ];
+
+            const allChecked = checklistItems.every(item => content.includes(item));
+
+            if (!allChecked) {
+              throw new Error('All checklist items must be selected!');
+            }
+            console.log('PR checklist completed successfully!');
+
+      - name: Fail workflow if checks fail
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const check_risk_impact = process.env.CHECK_RISK_IMPACT_STATUS;
+            const check_checklist = process.env.CHECK_CHECKLIST_STATUS;
+
+            if (check_risk_impact === 'failure' || check_checklist === 'failure') {
+              console.log('Pull request checks failed!');
+              throw new Error('Pull request checks failed!');
+            } else {
+              console.log('Pull request checks passed!');
             }
