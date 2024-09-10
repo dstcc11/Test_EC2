@@ -42,7 +42,7 @@ jobs:
       - name: Check Risk Level
         id: check_risk
         run: |
-          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" dstcc11/Test_EC2/.github/pull_request_template.md || true)
+          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
 
           if [ -z "$RISK_LEVEL" ]; then
             echo "Error: No Risk Level option checked."
@@ -54,7 +54,7 @@ jobs:
       - name: Check Impact
         id: check_impact
         run: |
-          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" dstcc11/Test_EC2/.github/pull_request_template.md || true)
+          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
 
           if [ -z "$IMPACT" ]; then
             echo "Error: No Impact option checked."
