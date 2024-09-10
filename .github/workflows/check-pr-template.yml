@@ -12,9 +12,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check PR template
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          PR_BODY=$(cat ${{ github.event.pull_request.body }})
-          
           # Check Risk Level
           if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
             echo "Error: Risk Level not selected"
