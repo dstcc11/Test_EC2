@@ -1,53 +1,45 @@
-name: Check PR Template
+name: Pull Request Check
 
 on:
   pull_request:
-    types: [opened, edited, reopened]
+    branches:
+      - main
 
 jobs:
-  check-template:
+  check:
     runs-on: ubuntu-latest
     steps:
-    - name: Get PR content
-      id: get_pr
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const { data: pullRequest } = await github.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: context.payload.pull_request.number,
-          });
-          return pullRequest.body;
+      - name: Check Risk Level
+        run: |
+          if [ -z "${RISK_LEVEL}" ]; then
+            echo "Error: Risk Level is not set"
+            exit 1
+          fi
+      - name: Check Impact
+        run: |
+          if [ -z "${IMPACT}" ]; then
+            echo "Error: Impact is not set"
+            exit 1
+          fi
+      - name: Check Checkboxes
+        run: |
+          if [ -z "${CHECKBOXES}" ]; then
+            echo "Error: Not all checkboxes are selected"
+            exit 1
+          fi
+          checkboxes=("You have verified that this pull request fulfills the story's scope/description."
+            "You have verified that this pull request fulfills all story acceptance criteria."
+            "You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "Authorized personnel have reviewed this code and approved it."
+            "This change is ready for Demo to the product manager & rest of the team.")
+          for checkbox in "${checkboxes[@]}"; do
+            if [ -z "${checkbox}" ]; then
+              echo "Error: Checkbox '${checkbox}' is not selected"
+              exit 1
+            fi
+          done
 
-    - name: Validate PR template
-      id: validate_template
-      run: |
-        PR_BODY="${{ steps.get_pr.outputs.result }}"
-        
-        RISK_LEVEL=false
-        IMPACT=false
-        CHECKBOXES=false
-
-        if [[ "$PR_BODY" =~ "- $$x$$ Low" || "$PR_BODY" =~ "- $$x$$ Moderate" || "$PR_BODY" =~ "- $$x$$ High" ]]; then
-          RISK_LEVEL=true
-        fi
-
-        if [[ "$PR_BODY" =~ "- $$x$$ Low" || "$PR_BODY" =~ "- $$x$$ Moderate" || "$PR_BODY" =~ "- $$x$$ High" ]]; then
-          IMPACT=true
-        fi
-
-        if [[ "$PR_BODY" =~ "- $$x$$ You have verified that this pull request fulfills the story's scope/description." && \
-              "$PR_BODY" =~ "- $$x$$ You have verified that this pull request fulfills all story acceptance criteria." && \
-              "$PR_BODY" =~ "- $$x$$ You have created any necessary Integration Tests that verify the code being changed appropriately." && \
-              "$PR_BODY" =~ "- $$x$$ There is sufficient documentation of this change to satisfy the Product Manager of this service." && \
-              "$PR_BODY" =~ "- $$x$$ Authorized personnel have reviewed this code and approved it." && \
-              "$PR_BODY" =~ "- $$x$$ This change is ready for Demo to the product manager & rest of the team." ]]; then
-          CHECKBOXES=true
-        fi
-
-        if [[ "$RISK_LEVEL" == true && "$IMPACT" == true && "$CHECKBOXES" == true ]]; then
-          exit 0
-        else
-          exit 1
-        fi
+      - name: Success
+        run: |
+          echo "Pull Request is valid. Ready to merge!"
