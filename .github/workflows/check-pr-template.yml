@@ -1,41 +1,36 @@
-name: PR Checklist Verification
+name: PR Checklist Validation
 
 on:
   pull_request:
     types: [opened, edited, synchronize]
 
 jobs:
-  check_pr_template:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Verify PR Checklist
-        id: verify
-        run: |
-          TEMPLATE_FILE=".github/pull_request_template.md"
-          CONTENT=$(cat "$TEMPLATE_FILE")
+    - name: Validate PR checklist
+      id: validate
+      run: |
+        CHECKLIST_ITEMS=(
+          "You have verified that this pull request fulfills the story's scope/description."
+          "You have verified that this pull request fulfills all story acceptance criteria."
+          "You have created any necessary Integration Tests that verify the code being changed appropriately."
+          "There is sufficient documentation of this change to satisfy the Product Manager of this service."
+          "Level 1 (QA Engineer) and Level 2 (Manager) authorized personnel have reviewed this code and approved it."
+          "This change is ready for Demo to the product manager & rest of the team."
+        )
 
-          REQUIRED_CHECKBOXES=(
-            "- [ ] You have verified that this pull request fulfills the story's scope/description."
-            "- [ ] You have verified that this pull request fulfills all story acceptance criteria."
-            "- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "- [ ] Authorized personnel have reviewed this code and approved it."
-            "- [ ] This change is ready for Demo to the product manager & rest of the team."
-          )
+        for ITEM in "${CHECKLIST_ITEMS[@]}"; do
+          if ! grep -q "\- \[x\] $ITEM" "$GITHUB_EVENT_PATH"; then
+            echo "Checklist item not completed: $ITEM"
+            exit 1
+          fi
+        done
 
-          for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
-            if ! grep -q "$CHECKBOX" "$TEMPLATE_FILE"; then
-              echo "Error: Checklist item not found - $CHECKBOX"
-              exit 1
-            fi
-          done
-
-          echo "All required checklist items found."
-
-      - name: Success
-        if: success()
-        run: echo "Pull Request meets all requirements, ready to merge."
+    - name: Allow merge if checklist is complete
+      if: success()
+      run: echo "All checklist items are completed. PR can be merged."
