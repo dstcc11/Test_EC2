@@ -1,54 +1,68 @@
-name: Pull Request Checks
+name: PR Checklist Verification
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened, edited, synchronize]
 
 jobs:
-  check-pr-template:
+  check_pr_template:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Verify PR Checklist
+        id: verify
+        run: |
+          TEMPLATE_FILE="dstcc11/Test_EC2/.github/pull_request_template.md"
+          CONTENT=$(cat "$TEMPLATE_FILE")
+
+          REQUIRED_CHECKBOXES=(
+            "- [ ] You have verified that this pull request fulfills the story's scope/description."
+            "- [ ] You have verified that this pull request fulfills all story acceptance criteria."
+            "- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "- [ ] Authorized personnel have reviewed this code and approved it."
+            "- [ ] This change is ready for Demo to the product manager & rest of the team."
+            "- [ ] Low"
+            "- [ ] Moderate"
+            "- [ ] High"
+          )
+
+          for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
+            if ! grep -q "$CHECKBOX" "$TEMPLATE_FILE"; then
+              echo "Error: Checklist item not found - $CHECKBOX"
+              exit 1
+            fi
+          done
+
+          echo "All required checklist items found."
 
       - name: Check Risk Level
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const templateFile = '.github/pull_request_template.md';
-            const templateContent = core.getInput('template_content', { required: true });
-            const riskLevelRegex = /\[x\]\sLow|\[x\]\sModerate|\[x\]\sHigh/;
+        id: check_risk
+        run: |
+          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" dstcc11/Test_EC2/.github/pull_request_template.md || true)
 
-            if (!riskLevelRegex.test(templateContent)) {
-              core.setFailed('Risk Level must be selected.');
-            }
+          if [ -z "$RISK_LEVEL" ]; then
+            echo "Error: No Risk Level option checked."
+            exit 1
+          else
+            echo "Risk Level checked: $RISK_LEVEL"
+          fi
 
       - name: Check Impact
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const templateFile = '.github/pull_request_template.md';
-            const templateContent = core.getInput('template_content', { required: true });
-            const impactRegex = /\[x\]\sLow|\[x\]\sModerate|\[x\]\sHigh/;
+        id: check_impact
+        run: |
+          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" dstcc11/Test_EC2/.github/pull_request_template.md || true)
 
-            if (!impactRegex.test(templateContent)) {
-              core.setFailed('Impact must be selected.');
-            }
+          if [ -z "$IMPACT" ]; then
+            echo "Error: No Impact option checked."
+            exit 1
+          else
+            echo "Impact checked: $IMPACT"
+          fi
 
-      - name: Check PR Creator Checkboxes
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const templateFile = '.github/pull_request_template.md';
-            const templateContent = core.getInput('template_content', { required: true });
-            const checkboxesRegex = /\[x\]\sYou have verified that this pull request fulfills the story's scope\/description./g;
-            const matches = templateContent.match(checkboxesRegex);
-
-            if (!matches || matches.length !== 6) {
-              core.setFailed('All checkboxes must be selected.');
-            }
-
-      - name: Fail workflow if checks not met
-        uses: actions/github-script@v6
-        if: github.event.action != 'closed'
-        with:
-          script: core.setFailed('Risk Level, Impact, and all checkboxes must be filled!')
+      - name: Success
+        if: success()
+        run: echo "Pull Request meets all requirements, ready to merge."
