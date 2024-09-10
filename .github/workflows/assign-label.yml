@@ -8,8 +8,8 @@ on:
 
 jobs:
   assign-label:
-    uses: ./github/workflows/assign-label.yml@main
+    uses: .github/workflows/assign-label.yml@main
     with:
-      config-path: "./github/config/auto-label-pulls.json"
+      config-path: ".github/config/auto-label-pulls.json"
     secrets:
       token: ${{ secrets.GHACTION_TOKEN }}
