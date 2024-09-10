@@ -1,0 +1,5 @@
+{
+  "main": "critical",
+  "master": "critical",
+  "qa": "critical"
+}
