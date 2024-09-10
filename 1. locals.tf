@@ -5,7 +5,7 @@ locals {
       ami           = data.aws_ami.latest_ubuntu.id
       tags = {
         "tag1" = "b1"
-        }
+      }
     }
   }
 }
