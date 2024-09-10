@@ -1,35 +1,42 @@
-name: Check Pull Request Template
+name: Pull Request Checklist
 
-on: [pull_request]
+on:
+  pull_request:
+    types: [synchronize]
 
 jobs:
-  check-pr-template:
+  checklist:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Get Pull Request Description
-        id: get_pr
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const pr = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-            });
-            return pr.data.body;
-
-      - name: Check PR Template
-        id: check_template
+      - name: Check checklist
         run: |
-          pr_body="${{ steps.get_pr.outputs.result }}"
-          if [[ "$pr_body" != *"[x]*[x]*[x]*[x]*[x]*[x]*" ]]; then
-            echo "PR Template not fully filled. Please check all the required boxes."
+          md_file="pull_request_template.md"
+          checks=0
+          if grep -q "\[x\] You have verified that this pull request fulfills the story's scope/description." "$md_file"; then
+            ((checks++))
+          fi
+          if grep -q "\[x\] You have verified that this pull request fulfills all story acceptance criteria." "$md_file"; then
+            ((checks++))
+          fi
+          if grep -q "\[x\] You have created any necessary Integration Tests that verify the code being changed appropriately." "$md_file"; then
+            ((checks++))
+          fi
+          if grep -q "\[x\] There is sufficient documentation of this change to satisfy the Product Manager of this service." "$md_file"; then
+            ((checks++))
+          fi
+          if grep -q "\[x\] Authorized personnel have reviewed this code and approved it." "$md_file"; then
+            ((checks++))
+          fi
+          if grep -q "\[x\] This change is ready for Demo to the product manager & rest of the team." "$md_file"; then
+            ((checks++))
+          fi
+          if [ $checks -eq 6 ]; then
+            echo "Checklist complete! Merging allowed."
+            exit 0
+          else
+            echo "Checklist incomplete! Merging not allowed."
             exit 1
           fi
-
-      - name: Allow Merge
-        if: success()
-        run: echo "All checks passed. Ready to merge."
