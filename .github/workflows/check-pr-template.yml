@@ -1,43 +1,54 @@
-name: Enforce Pull Request Checks
+name: Pull Request Checks
 
 on:
   pull_request:
+    types: [opened, edited]
 
 jobs:
-  enforce_checks:
+  check-pr-template:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
       - name: Check Risk Level
-        uses: gr2m/issue-triage@v4
-        with:
-          labels: risk
-
-      - name: Check Impact
-        uses: gr2m/issue-triage@v4
-        with:
-          labels: impact
-
-      - name: Check Merge Checklist
-        uses: juliangruber/goreview-labels@v2
-        with:
-          required-labels: "verified"
-          label: "verified"
-          context: "(For Pull Request creator only!) Please check these once you have verified each of them. When done, you'll be able to merge."
-
-      - name: Fail workflow if checks are not met
         uses: actions/github-script@v6
         with:
           script: |
-            github.actions.getIssue({ issue_number: context.issue.number })
-              .then(issue => {
-                const riskLabels = issue.labels.filter(label => label.name.toLowerCase() === 'risk');
-                const impactLabels = issue.labels.filter(label => label.name.toLowerCase() === 'impact');
-                const verifiedLabels = issue.labels.filter(label => label.name === 'verified');
+            const templateFile = '.github/pull_request_template.md';
+            const templateContent = core.getInput('template_content', { required: true });
+            const riskLevelRegex = /\[x\]\sLow|\[x\]\sModerate|\[x\]\sHigh/;
 
-                if (riskLabels.length === 0 || impactLabels.length === 0 || verifiedLabels.length !== 6) {
-                  throw new Error('Pull request does not meet all requirements. Please fill out Risk Level, Impact, and verify all checkboxes.');
-                }
-              });
+            if (!riskLevelRegex.test(templateContent)) {
+              core.setFailed('Risk Level must be selected.');
+            }
+
+      - name: Check Impact
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const templateFile = '.github/pull_request_template.md';
+            const templateContent = core.getInput('template_content', { required: true });
+            const impactRegex = /\[x\]\sLow|\[x\]\sModerate|\[x\]\sHigh/;
+
+            if (!impactRegex.test(templateContent)) {
+              core.setFailed('Impact must be selected.');
+            }
+
+      - name: Check PR Creator Checkboxes
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const templateFile = '.github/pull_request_template.md';
+            const templateContent = core.getInput('template_content', { required: true });
+            const checkboxesRegex = /\[x\]\sYou have verified that this pull request fulfills the story's scope\/description./g;
+            const matches = templateContent.match(checkboxesRegex);
+
+            if (!matches || matches.length !== 6) {
+              core.setFailed('All checkboxes must be selected.');
+            }
+
+      - name: Fail workflow if checks not met
+        uses: actions/github-script@v6
+        if: github.event.action != 'closed'
+        with:
+          script: core.setFailed('Risk Level, Impact, and all checkboxes must be filled!')
