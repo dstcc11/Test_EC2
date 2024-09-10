@@ -19,12 +19,12 @@ jobs:
           CONTENT=$(cat "$TEMPLATE_FILE")
 
           REQUIRED_CHECKBOXES=(
-            "- You have verified that this pull request fulfills the story's scope/description."
-            "- You have verified that this pull request fulfills all story acceptance criteria."
-            "- You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "- There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "- Authorized personnel have reviewed this code and approved it."
-            "- This change is ready for Demo to the product manager & rest of the team."
+            "You have verified that this pull request fulfills the story's scope/description."
+            "You have verified that this pull request fulfills all story acceptance criteria."
+            "You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "Authorized personnel have reviewed this code and approved it."
+            "This change is ready for Demo to the product manager & rest of the team."
           )
 
           for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
@@ -39,7 +39,7 @@ jobs:
       - name: Check Risk Level
         id: check_risk
         run: |
-          RISK_LEVEL=$(grep -E "Low|Moderate|High" .github/pull_request_template.md | grep -o "Low\|Moderate\|High" || true)
+          RISK_LEVEL=$(grep -oE "Low|Moderate|High" .github/pull_request_template.md || true)
 
           if [ -z "$RISK_LEVEL" ]; then
             echo "Error: No Risk Level option checked."
@@ -51,7 +51,7 @@ jobs:
       - name: Check Impact
         id: check_impact
         run: |
-          IMPACT=$(grep -E "Low|Moderate|High" .github/pull_request_template.md | grep -o "Low\|Moderate\|High" || true)
+          IMPACT=$(grep -oE "Low|Moderate|High" .github/pull_request_template.md || true)
 
           if [ -z "$IMPACT" ]; then
             echo "Error: No Impact option checked."
