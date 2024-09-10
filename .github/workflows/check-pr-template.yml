@@ -13,38 +13,38 @@ jobs:
 
       - name: Check Risk Level and Impact
         run: |
-          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" dstcc11/Test_EC2/.github/pull_request_template.md; then
+          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" .github/pull_request_template.md; then
             echo "Error: Risk Level not checked"
             exit 1
           fi
-          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" dstcc11/Test_EC2/.github/pull_request_template.md; then
+          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" .github/pull_request_template.md; then
             echo "Error: Impact not checked"
             exit 1
           fi
 
       - name: Check Pull Request creator checks
         run: |
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "verified that this pull request fulfills the story's scope/description"; then
+          if ! grep -q "^\[x\] You have verified that this pull request fulfills the story's scope/description" .github/pull_request_template.md; then
             echo "Error: Not verified that this pull request fulfills the story's scope/description"
             exit 1
           fi
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "verified that this pull request fulfills all story acceptance criteria"; then
+          if ! grep -q "^\[x\] You have verified that this pull request fulfills all story acceptance criteria" .github/pull_request_template.md; then
             echo "Error: Not verified that this pull request fulfills all story acceptance criteria"
             exit 1
           fi
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "created any necessary Integration Tests"; then
+          if ! grep -q "^\[x\] You have created any necessary Integration Tests that verify the code being changed appropriately" .github/pull_request_template.md; then
             echo "Error: Not created any necessary Integration Tests"
             exit 1
           fi
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "sufficient documentation of this change"; then
+          if ! grep -q "^\[x\] There is sufficient documentation of this change to satisfy the Product Manager of this service" .github/pull_request_template.md; then
             echo "Error: Not sufficient documentation of this change"
             exit 1
           fi
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "Authorized personnel have reviewed this code"; then
+          if ! grep -q "^\[x\] Authorized personnel have reviewed this code and approved it" .github/pull_request_template.md; then
             echo "Error: Not Authorized personnel have reviewed this code"
             exit 1
           fi
-          if ! grep -q "^-\ [x]" dstcc11/Test_EC2/.github/pull_request_template.md | grep -q "This change is ready for Demo"; then
+          if ! grep -q "^\[x\] This change is ready for Demo to the product manager & rest of the team" .github/pull_request_template.md; then
             echo "Error: Not This change is ready for Demo"
             exit 1
           fi
