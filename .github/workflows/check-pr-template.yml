@@ -1,68 +1,42 @@
-name: PR Checklist Verification
+name: PR Checks
 
 on:
   pull_request:
-    types: [opened, edited, synchronize]
+    types: [opened, edited]
 
 jobs:
-  check_pr_template:
+  check-pr-template:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Verify PR Checklist
-        id: verify
-        run: |
-          TEMPLATE_FILE=".github/pull_request_template.md"
-          CONTENT=$(cat "$TEMPLATE_FILE")
-
-          REQUIRED_CHECKBOXES=(
-            "- [ ] You have verified that this pull request fulfills the story's scope/description."
-            "- [ ] You have verified that this pull request fulfills all story acceptance criteria."
-            "- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "- [ ] Authorized personnel have reviewed this code and approved it."
-            "- [ ] This change is ready for Demo to the product manager & rest of the team."
-            "- [ ] Low"
-            "- [ ] Moderate"
-            "- [ ] High"
-          )
-
-          for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
-            if ! grep -q "$CHECKBOX" "$TEMPLATE_FILE"; then
-              echo "Error: Checklist item not found - $CHECKBOX"
-              exit 1
-            fi
-          done
-
-          echo "All required checklist items found."
+      - uses: actions/checkout@v3
 
       - name: Check Risk Level
-        id: check_risk
-        run: |
-          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
-
-          if [ -z "$RISK_LEVEL" ]; then
-            echo "Error: No Risk Level option checked."
-            exit 1
-          else
-            echo "Risk Level checked: $RISK_LEVEL"
-          fi
+        uses: gr2m/github-action-markdown-checkbox@v2
+        with:
+          file: pull_request_template.md
+          pattern: 'Risk Level'
+          failure-message: 'Please select a Risk Level'
 
       - name: Check Impact
-        id: check_impact
-        run: |
-          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
+        uses: gr2m/github-action-markdown-checkbox@v2
+        with:
+          file: pull_request_template.md
+          pattern: 'Impact'
+          failure-message: 'Please select an Impact'
 
-          if [ -z "$IMPACT" ]; then
-            echo "Error: No Impact option checked."
-            exit 1
-          else
-            echo "Impact checked: $IMPACT"
-          fi
+      - name: Check PR Creator Checkboxes
+        uses: gr2m/github-action-markdown-checkbox@v2
+        with:
+          file: pull_request_template.md
+          pattern: '\[ \] You have verified'
+          checkboxes: 6
+          failure-message: 'Please check all 6 checkboxes under "For Pull Request creator only!"'
 
-      - name: Success
-        if: success()
-        run: echo "Pull Request meets all requirements, ready to merge."
+      - name: Fail workflow if any check failed
+        uses: actions/github-script@v6
+        with:
+          github-script: |
+            if (github.event.issue.pull_requests && github.event.issue.pull_requests[0].merged === false) {
+              core.setFailed('Pull Request cannot be merged due to missing information in pull_request_template.md')
+            }
