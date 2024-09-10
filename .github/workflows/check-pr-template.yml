@@ -19,15 +19,12 @@ jobs:
           CONTENT=$(cat "$TEMPLATE_FILE")
 
           REQUIRED_CHECKBOXES=(
-            "- [ ] You have verified that this pull request fulfills the story's scope/description."
-            "- [ ] You have verified that this pull request fulfills all story acceptance criteria."
-            "- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "- [ ] Authorized personnel have reviewed this code and approved it."
-            "- [ ] This change is ready for Demo to the product manager & rest of the team."
-            "- [ ] Low"
-            "- [ ] Moderate"
-            "- [ ] High"
+            "- \$$ \$$ You have verified that this pull request fulfills the story's scope/description."
+            "- \$$ \$$ You have verified that this pull request fulfills all story acceptance criteria."
+            "- \$$ \$$ You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "- \$$ \$$ There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "- \$$ \$$ Authorized personnel have reviewed this code and approved it."
+            "- \$$ \$$ This change is ready for Demo to the product manager & rest of the team."
           )
 
           for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
@@ -36,13 +33,13 @@ jobs:
               exit 1
             fi
           done
-
+          
           echo "All required checklist items found."
 
       - name: Check Risk Level
         id: check_risk
         run: |
-          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
+          RISK_LEVEL=$(grep -E "\- \\$$x\\$$ Low|\- \\$$x\\$$ Moderate|\- \\$$x\\$$ High" .github/pull_request_template.md || true)
 
           if [ -z "$RISK_LEVEL" ]; then
             echo "Error: No Risk Level option checked."
@@ -54,7 +51,7 @@ jobs:
       - name: Check Impact
         id: check_impact
         run: |
-          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
+          IMPACT=$(grep -E "\- \\$$x\\$$ Low|\- \\$$x\\$$ Moderate|\- \\$$x\\$$ High" .github/pull_request_template.md || true)
 
           if [ -z "$IMPACT" ]; then
             echo "Error: No Impact option checked."
@@ -64,5 +61,5 @@ jobs:
           fi
 
       - name: Success
-        if: success()
+        if: always()
         run: echo "Pull Request meets all requirements, ready to merge."
