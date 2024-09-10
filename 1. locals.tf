@@ -6,6 +6,7 @@ locals {
       tags = {
         "tag1" = "a1"
         "tag2" = "b2"
+        "tag3" = "c3"
         }
     }
   }
