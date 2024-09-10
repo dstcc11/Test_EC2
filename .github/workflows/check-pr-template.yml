@@ -2,69 +2,51 @@ name: Pull Request Checks
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
-  check-template:
+  check_pr_template:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Check Risk Level and Impact
-        id: check_risk_impact
+      - name: Check PR template
+        run: |
+          PR_BODY=$(cat ${{ github.event.pull_request.body }})
+          
+          # Check Risk Level
+          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
+            echo "Error: Risk Level not selected"
+            exit 1
+          fi
+          
+          # Check Impact
+          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
+            echo "Error: Impact not selected"
+            exit 1
+          fi
+          
+          # Check all 6 checkboxes
+          REQUIRED_CHECKS=6
+          CHECKED_COUNT=$(echo "$PR_BODY" | grep -c "\- \[x\] You have")
+          if [ $CHECKED_COUNT -ne $REQUIRED_CHECKS ]; then
+            echo "Error: Not all required checkboxes are checked"
+            exit 1
+          fi
+          
+          echo "All checks passed"
+
+      - name: Block PR
+        if: failure()
         uses: actions/github-script@v6
         with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const fs = require('fs');
-            const content = fs.readFileSync('pull_request_template.md', 'utf8');
-
-            const riskChecked = content.includes('[ ] Low') ||
-              content.includes('[ ] Moderate') ||
-              content.includes('[ ] High');
-
-            const impactChecked = content.includes('[ ] Low') ||
-              content.includes('[ ] Moderate') ||
-              content.includes('[ ] High');
-
-            if (!riskChecked || !impactChecked) {
-              throw new Error('Risk Level and Impact must be selected!');
-            }
-            console.log('Risk Level and Impact checked successfully!');
-
-      - name: Check PR checklist
-        id: check_checklist
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const content = fs.readFileSync('pull_request_template.md', 'utf8');
-
-            const checklistItems = [
-              '- [ ] You have verified that this pull request fulfills the story\'s scope/description.',
-              '- [ ] You have verified that this pull request fulfills all story acceptance criteria.',
-              '- [ ] You have created any necessary Integration Tests that verify the code being changed appropriately.',
-              '- [ ] There is sufficient documentation of this change to satisfy the Product Manager of this service.',
-              '- [ ] Authorized personnel have reviewed this code and approved it.',
-              '- [ ] This change is ready for Demo to the product manager & rest of the team.',
-            ];
-
-            const allChecked = checklistItems.every(item => content.includes(item));
-
-            if (!allChecked) {
-              throw new Error('All checklist items must be selected!');
-            }
-            console.log('PR checklist completed successfully!');
-
-      - name: Fail workflow if checks fail
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const check_risk_impact = process.env.CHECK_RISK_IMPACT_STATUS;
-            const check_checklist = process.env.CHECK_CHECKLIST_STATUS;
-
-            if (check_risk_impact === 'failure' || check_checklist === 'failure') {
-              console.log('Pull request checks failed!');
-              throw new Error('Pull request checks failed!');
-            } else {
-              console.log('Pull request checks passed!');
-            }
+            github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: 'Please ensure all required fields are filled and checkboxes are checked before merging.',
+              event: 'REQUEST_CHANGES'
+            })
