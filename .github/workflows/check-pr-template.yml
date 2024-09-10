@@ -1,0 +1,35 @@
+name: Check Pull Request Template
+
+on: [pull_request]
+
+jobs:
+  check-pr-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get Pull Request Description
+        id: get_pr
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const pr = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+            return pr.data.body;
+
+      - name: Check PR Template
+        id: check_template
+        run: |
+          pr_body="${{ steps.get_pr.outputs.result }}"
+          if [[ "$pr_body" != *"[x]*[x]*[x]*[x]*[x]*[x]*" ]]; then
+            echo "PR Template not fully filled. Please check all the required boxes."
+            exit 1
+          fi
+
+      - name: Allow Merge
+        if: success()
+        run: echo "All checks passed. Ready to merge."
