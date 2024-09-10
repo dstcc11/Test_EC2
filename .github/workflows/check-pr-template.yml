@@ -1,4 +1,4 @@
-name: Verify PR Checklist Workflow
+name: Verify PR Checklist
 
 on:
   pull_request:
@@ -12,23 +12,22 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Verify PR Checklist
-        id: verify
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          PR_BODY="${{ github.event.pull_request.body }}"
-
           REQUIRED_CHECKBOXES=(
-            "- [x] You have verified that this pull request fulfills the story's scope/description."
-            "- [x] You have verified that this pull request fulfills all story acceptance criteria."
-            "- [x] You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "- [x] There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "- [x] Authorized personnel have reviewed this code and approved it."
-            "- [x] This change is ready for Demo to the product manager & rest of the team."
+            "- \[x\] You have verified that this pull request fulfills the story's scope/description."
+            "- \[x\] You have verified that this pull request fulfills all story acceptance criteria."
+            "- \[x\] You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "- \[x\] There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "- \[x\] Authorized personnel have reviewed this code and approved it."
+            "- \[x\] This change is ready for Demo to the product manager & rest of the team."
           )
 
           RISK_IMPACT_CHECKBOXES=(
-            "- [x] Low"
-            "- [x] Moderate"
-            "- [x] High"
+            "- \[x\] Low"
+            "- \[x\] Moderate"
+            "- \[x\] High"
           )
 
           # Check required checkboxes
@@ -42,7 +41,7 @@ jobs:
           # Check Risk Level
           RISK_CHECKED=false
           for CHECKBOX in "${RISK_IMPACT_CHECKBOXES[@]}"; do
-            if echo "$PR_BODY" | grep -q "### Risk Level" -A 10 | grep -q "$CHECKBOX"; then
+            if echo "$PR_BODY" | sed -n '/### Risk Level/,/### Impact/p' | grep -q "$CHECKBOX"; then
               RISK_CHECKED=true
               break
             fi
@@ -55,7 +54,7 @@ jobs:
           # Check Impact
           IMPACT_CHECKED=false
           for CHECKBOX in "${RISK_IMPACT_CHECKBOXES[@]}"; do
-            if echo "$PR_BODY" | grep -q "### Impact" -A 10 | grep -q "$CHECKBOX"; then
+            if echo "$PR_BODY" | sed -n '/### Impact/,/### Test Plan/p' | grep -q "$CHECKBOX"; then
               IMPACT_CHECKED=true
               break
             fi
