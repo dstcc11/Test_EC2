@@ -19,11 +19,11 @@ jobs:
 
       - name: Check Checkboxes
         if: >-
-          contains(github.event.pull_request.body, '- [x] You have verified that this pull request fulfills the story\'s scope/description.') &&
-          contains(github.event.pull_request.body, '- [x] You have verified that this pull request fulfills all story acceptance criteria.') &&
-          contains(github.event.pull_request.body, '- [x] You have created any necessary Integration Tests that verify the code being changed appropriately.') &&
-          contains(github.event.pull_request.body, '- [x] There is sufficient documentation of this change to satisfy the Product Manager of this service.') &&
-          contains(github.event.pull_request.body, '- [x] Authorized personnel have reviewed this code and approved it.') &&
+          contains(github.event.pull_request.body, '- [x] You have verified that this pull request fulfills the story\'s scope/description.') && 
+          contains(github.event.pull_request.body, '- [x] You have verified that this pull request fulfills all story acceptance criteria.') && 
+          contains(github.event.pull_request.body, '- [x] You have created any necessary Integration Tests that verify the code being changed appropriately.') && 
+          contains(github.event.pull_request.body, '- [x] There is sufficient documentation of this change to satisfy the Product Manager of this service.') && 
+          contains(github.event.pull_request.body, '- [x] Authorized personnel have reviewed this code and approved it.') && 
           contains(github.event.pull_request.body, '- [x] This change is ready for Demo to the product manager & rest of the team.')
         run: echo "Checkboxes checked"
 
