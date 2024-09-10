@@ -12,8 +12,7 @@ jobs:
       - name: Verify PR Checklist
         id: verify
         run: |
-          TEMPLATE_FILE=".github/pull_request_template.md"
-          CONTENT=$(cat "$TEMPLATE_FILE")
+          CONTENT=$(cat ".github/pull_request_template.md")
 
           REQUIRED_CHECKBOXES=(
             "- \[x] You have verified that this pull request fulfills the story's scope/description."
