@@ -1,41 +1,71 @@
-name: Pull Request Checks
+name: Verify PR Checklist Workflow
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
 jobs:
-  check_pr_template:
+  verify_checklist:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Check PR template
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
+      - name: Verify PR Checklist
+        id: verify
         run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          REQUIRED_CHECKBOXES=(
+            "- [x] You have verified that this pull request fulfills the story's scope/description."
+            "- [x] You have verified that this pull request fulfills all story acceptance criteria."
+            "- [x] You have created any necessary Integration Tests that verify the code being changed appropriately."
+            "- [x] There is sufficient documentation of this change to satisfy the Product Manager of this service."
+            "- [x] Authorized personnel have reviewed this code and approved it."
+            "- [x] This change is ready for Demo to the product manager & rest of the team."
+          )
+
+          RISK_IMPACT_CHECKBOXES=(
+            "- [x] Low"
+            "- [x] Moderate"
+            "- [x] High"
+          )
+
+          # Check required checkboxes
+          for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
+            if ! echo "$PR_BODY" | grep -q "$CHECKBOX"; then
+              echo "Error: Required checkbox not checked - $CHECKBOX"
+              exit 1
+            fi
+          done
+
           # Check Risk Level
-          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
+          RISK_CHECKED=false
+          for CHECKBOX in "${RISK_IMPACT_CHECKBOXES[@]}"; do
+            if echo "$PR_BODY" | grep -q "### Risk Level" -A 10 | grep -q "$CHECKBOX"; then
+              RISK_CHECKED=true
+              break
+            fi
+          done
+          if [ "$RISK_CHECKED" = false ]; then
             echo "Error: Risk Level not selected"
             exit 1
           fi
-          
+
           # Check Impact
-          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
+          IMPACT_CHECKED=false
+          for CHECKBOX in "${RISK_IMPACT_CHECKBOXES[@]}"; do
+            if echo "$PR_BODY" | grep -q "### Impact" -A 10 | grep -q "$CHECKBOX"; then
+              IMPACT_CHECKED=true
+              break
+            fi
+          done
+          if [ "$IMPACT_CHECKED" = false ]; then
             echo "Error: Impact not selected"
             exit 1
           fi
-          
-          # Check all 6 checkboxes
-          REQUIRED_CHECKS=6
-          CHECKED_COUNT=$(echo "$PR_BODY" | grep -c "\- \[x\] You have")
-          if [ $CHECKED_COUNT -ne $REQUIRED_CHECKS ]; then
-            echo "Error: Not all required checkboxes are checked. Found $CHECKED_COUNT out of $REQUIRED_CHECKS."
-            exit 1
-          fi
-          
-          echo "All checks passed"
+
+          echo "All required checklist items found and checked."
 
       - name: Block PR
         if: failure()
