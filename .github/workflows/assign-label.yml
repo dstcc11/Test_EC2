@@ -1,16 +1,22 @@
 name: assign-label
 
 on:
-  workflow_call:    # Added this line
   workflow_dispatch:
   pull_request:
     types:
       - opened
+  workflow_call:
 
 jobs:
   assign-label:
-    uses: dstcc11/Test_EC2/.github/workflows/assign-label.yml@main
-    with:
-      config-path: ".github/config/auto-label-pulls.json"
-    secrets:
-      token: ${{ secrets.GHACTION_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Run assign-label job
+        uses: dstcc11/Test_EC2/.github/workflows/assign-label.yml@main
+        with:
+          config-path: ".github/config/auto-label-pulls.json"
+        secrets:
+          token: ${{ secrets.GHACTION_TOKEN }}
