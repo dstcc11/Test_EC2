@@ -9,7 +9,7 @@ jobs:
   Approval:
     uses: dstcc11/Test_EC2/.github/workflows/check-review.yml@main
     with:
-      owner: "kubra-hq"
+      owner: "dstcc11"
       teams: "CAB_Team"
     secrets:
       token: ${{ secrets.GHACTION_TOKEN }}
