@@ -1,65 +1,50 @@
-name: PR Checklist Verification
+name: Pull Request Checks
 
 on:
   pull_request:
-    types: [opened, edited, synchronize]
+    types: [opened, edited]
 
 jobs:
-  check_pr_template:
+  checks:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Verify PR Checklist
-        id: verify
+      - name: Check Risk Level and Impact
         run: |
-          TEMPLATE_FILE=".github/pull_request_template.md"
-          CONTENT=$(cat "$TEMPLATE_FILE")
-
-          REQUIRED_CHECKBOXES=(
-            "You have verified that this pull request fulfills the story's scope/description."
-            "You have verified that this pull request fulfills all story acceptance criteria."
-            "You have created any necessary Integration Tests that verify the code being changed appropriately."
-            "There is sufficient documentation of this change to satisfy the Product Manager of this service."
-            "Authorized personnel have reviewed this code and approved it."
-            "This change is ready for Demo to the product manager & rest of the team."
-          )
-
-          for CHECKBOX in "${REQUIRED_CHECKBOXES[@]}"; do
-            if ! grep -qF "$CHECKBOX" "$TEMPLATE_FILE"; then
-              echo "Error: Checklist item not found - $CHECKBOX"
-              exit 1
-            fi
-          done
-          
-          echo "All required checklist items found."
-
-      - name: Check Risk Level
-        id: check_risk
-        run: |
-          RISK_LEVEL=$(grep -oE "Low|Moderate|High" .github/pull_request_template.md || true)
-
-          if [ -z "$RISK_LEVEL" ]; then
-            echo "Error: No Risk Level option checked."
+          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" pull_request_template.md; then
+            echo "Error: Risk Level not checked"
             exit 1
-          else
-            echo "Risk Level checked: $RISK_LEVEL"
+          fi
+          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" pull_request_template.md; then
+            echo "Error: Impact not checked"
+            exit 1
           fi
 
-      - name: Check Impact
-        id: check_impact
+      - name: Check Pull Request creator checks
         run: |
-          IMPACT=$(grep -oE "Low|Moderate|High" .github/pull_request_template.md || true)
-
-          if [ -z "$IMPACT" ]; then
-            echo "Error: No Impact option checked."
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "verified that this pull request fulfills the story's scope/description"; then
+            echo "Error: Not verified that this pull request fulfills the story's scope/description"
             exit 1
-          else
-            echo "Impact checked: $IMPACT"
           fi
-
-      - name: Success
-        if: always()
-        run: echo "Pull Request meets all requirements, ready to merge."
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "verified that this pull request fulfills all story acceptance criteria"; then
+            echo "Error: Not verified that this pull request fulfills all story acceptance criteria"
+            exit 1
+          fi
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "created any necessary Integration Tests"; then
+            echo "Error: Not created any necessary Integration Tests"
+            exit 1
+          fi
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "sufficient documentation of this change"; then
+            echo "Error: Not sufficient documentation of this change"
+            exit 1
+          fi
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "Authorized personnel have reviewed this code"; then
+            echo "Error: Not Authorized personnel have reviewed this code"
+            exit 1
+          fi
+          if ! grep -q "^-\ [x]" pull_request_template.md | grep -q "This change is ready for Demo"; then
+            echo "Error: Not This change is ready for Demo"
+            exit 1
+          fi
