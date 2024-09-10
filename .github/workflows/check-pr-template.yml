@@ -15,7 +15,7 @@ jobs:
       - name: Verify PR Checklist
         id: verify
         run: |
-          TEMPLATE_FILE=".github/PULL_REQUEST_TEMPLATE.md"
+          TEMPLATE_FILE=".github/pull_request_template.md"
           CONTENT=$(cat "$TEMPLATE_FILE")
 
           REQUIRED_CHECKBOXES=(
@@ -42,7 +42,7 @@ jobs:
       - name: Check Risk Level
         id: check_risk
         run: |
-          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/PULL_REQUEST_TEMPLATE.md || true)
+          RISK_LEVEL=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
 
           if [ -z "$RISK_LEVEL" ]; then
             echo "Error: No Risk Level option checked."
@@ -54,7 +54,7 @@ jobs:
       - name: Check Impact
         id: check_impact
         run: |
-          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/PULL_REQUEST_TEMPLATE.md || true)
+          IMPACT=$(grep -E "$$x$$\s+Low|$$x$$\s+Moderate|$$x$$\s+High" .github/pull_request_template.md || true)
 
           if [ -z "$IMPACT" ]; then
             echo "Error: No Impact option checked."
