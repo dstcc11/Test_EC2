@@ -7,7 +7,7 @@ on:
 
 jobs:
   Approval:
-    uses: kubra-hq/change-approval-wf/.github/workflows/check-review.yml@main
+    uses: .github/workflows/check-review.yml@main
     with:
       owner: "kubra-hq"
       teams: "CAB_Team"

@@ -8,7 +8,7 @@ on:
 
 jobs:
   assign-label:
-    uses: kubra-hq/change-approval-wf/.github/workflows/assign-label.yml@main
+    uses: .github/workflows/assign-label.yml@main
     with:
       config-path: ".github/config/auto-label-pulls.json"
     secrets:
