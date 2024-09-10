@@ -8,8 +8,21 @@ on:
 
 jobs:
   assign-label:
-    uses: kubra-hq/change-approval-wf/.github/workflows/assign-label.yml@main
-    with:
-      config-path: ".github/config/auto-label-pulls.json"
-    secrets:
-      token: ${{ secrets.GHACTION_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Assign label
+        run: |
+          echo "Token: ${{ secrets.GHACTION_TOKEN }}"
+          echo "Label configuration path: ${{ github.workspace }}/.github/config/auto-label-pulls.json"
+          # Your script/command to assign labels
