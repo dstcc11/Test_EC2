@@ -15,7 +15,7 @@ jobs:
       - name: Verify PR Checklist
         id: verify
         run: |
-          TEMPLATE_FILE="dstcc11/Test_EC2/.github/pull_request_template.md"
+          TEMPLATE_FILE=".github/pull_request_template.md"
           CONTENT=$(cat "$TEMPLATE_FILE")
 
           REQUIRED_CHECKBOXES=(
