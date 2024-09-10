@@ -1,50 +1,43 @@
-name: Pull Request Checks
+name: Enforce Pull Request Checks
 
 on:
   pull_request:
-    types: [opened, edited]
 
 jobs:
-  checks:
+  enforce_checks:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Check Risk Level and Impact
-        run: |
-          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" .github/pull_request_template.md; then
-            echo "Error: Risk Level not checked"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] \(Low\|Moderate\|High\)" .github/pull_request_template.md; then
-            echo "Error: Impact not checked"
-            exit 1
-          fi
+      - name: Check Risk Level
+        uses: gr2m/issue-triage@v4
+        with:
+          labels: risk
 
-      - name: Check Pull Request creator checks
-        run: |
-          if ! grep -q "^\[x\] You have verified that this pull request fulfills the story's scope/description" .github/pull_request_template.md; then
-            echo "Error: Not verified that this pull request fulfills the story's scope/description"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] You have verified that this pull request fulfills all story acceptance criteria" .github/pull_request_template.md; then
-            echo "Error: Not verified that this pull request fulfills all story acceptance criteria"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] You have created any necessary Integration Tests that verify the code being changed appropriately" .github/pull_request_template.md; then
-            echo "Error: Not created any necessary Integration Tests"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] There is sufficient documentation of this change to satisfy the Product Manager of this service" .github/pull_request_template.md; then
-            echo "Error: Not sufficient documentation of this change"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] Authorized personnel have reviewed this code and approved it" .github/pull_request_template.md; then
-            echo "Error: Not Authorized personnel have reviewed this code"
-            exit 1
-          fi
-          if ! grep -q "^\[x\] This change is ready for Demo to the product manager & rest of the team" .github/pull_request_template.md; then
-            echo "Error: Not This change is ready for Demo"
-            exit 1
-          fi
+      - name: Check Impact
+        uses: gr2m/issue-triage@v4
+        with:
+          labels: impact
+
+      - name: Check Merge Checklist
+        uses: juliangruber/goreview-labels@v2
+        with:
+          required-labels: "verified"
+          label: "verified"
+          context: "(For Pull Request creator only!) Please check these once you have verified each of them. When done, you'll be able to merge."
+
+      - name: Fail workflow if checks are not met
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.actions.getIssue({ issue_number: context.issue.number })
+              .then(issue => {
+                const riskLabels = issue.labels.filter(label => label.name.toLowerCase() === 'risk');
+                const impactLabels = issue.labels.filter(label => label.name.toLowerCase() === 'impact');
+                const verifiedLabels = issue.labels.filter(label => label.name === 'verified');
+
+                if (riskLabels.length === 0 || impactLabels.length === 0 || verifiedLabels.length !== 6) {
+                  throw new Error('Pull request does not meet all requirements. Please fill out Risk Level, Impact, and verify all checkboxes.');
+                }
+              });
