@@ -16,20 +16,20 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           # Check Risk Level
-          if ! echo "$PR_BODY" | grep -q "- \[x\] Low" && ! echo "$PR_BODY" | grep -q "- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "- \[x\] High"; then
+          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
             echo "Error: Risk Level not selected"
             exit 1
           fi
           
           # Check Impact
-          if ! echo "$PR_BODY" | grep -q "- \[x\] Low" && ! echo "$PR_BODY" | grep -q "- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "- \[x\] High"; then
+          if ! echo "$PR_BODY" | grep -q "\- \[x\] Low" && ! echo "$PR_BODY" | grep -q "\- \[x\] Moderate" && ! echo "$PR_BODY" | grep -q "\- \[x\] High"; then
             echo "Error: Impact not selected"
             exit 1
           fi
           
           # Check all 6 checkboxes
           REQUIRED_CHECKS=6
-          CHECKED_COUNT=$(echo "$PR_BODY" | grep -c "- \[x\] You have")
+          CHECKED_COUNT=$(echo "$PR_BODY" | grep -c "\- \[x\] You have")
           if [ $CHECKED_COUNT -ne $REQUIRED_CHECKS ]; then
             echo "Error: Not all required checkboxes are checked. Found $CHECKED_COUNT out of $REQUIRED_CHECKS."
             exit 1
