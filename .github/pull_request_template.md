@@ -19,7 +19,7 @@ Enter the actions to be taken to restore any associated service (including this 
 
 
 
-### Please check these once you have verified each of them. When done, you'll be able to merge. (For Pull Request creator only!)
+#### Please check these once you have verified each of them, you'll be able to merge once done. (For Pull Request creator only!)
 
 - [ ] You have verified that this pull request fulfills the story's scope/description.
 - [ ] You have verified that this pull request fulfills all story acceptance criteria.
