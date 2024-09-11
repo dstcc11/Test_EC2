@@ -6,7 +6,7 @@ locals {
       ebs_volumes = {
         "MountPoints" = {
           device_name = "/dev/sdd"
-          size        = "1"
+          size        = "500"
           type        = "io2"
         }
       }
