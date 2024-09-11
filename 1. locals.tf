@@ -7,7 +7,7 @@ locals {
         "MountPoints" = {
           device_name = "/dev/sdd"
           size        = "1"
-          type        = "gp3"
+          type        = "io2"
         }
       }
       tags = {
