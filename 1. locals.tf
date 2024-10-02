@@ -7,13 +7,21 @@ locals {
         "MountPoints" = {
           device_name = "/dev/sdd"
           size        = "500"
-          type        = "io2"
+          type        = "gp3"
         }
       }
       tags = {
         "t1" = "a1"
         "t2" = "a2"
       }
+    }
+    "test2" = {
+      instance_type = "t2.micro"
+      ami           = data.aws_ami.latest_ubuntu.id
+    }
+    "test3" = {
+      instance_type = "t2.micro"
+      ami           = data.aws_ami.latest_ubuntu.id
     }
   }
 }

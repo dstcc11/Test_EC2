@@ -7,6 +7,7 @@ provider "aws" {
   region = var.region2 # Update with the desired region for the backup copy
 }
 
+/*
 terraform {
   cloud {
 
@@ -16,4 +17,5 @@ terraform {
       name = "Test_EC2"
     }
   }
-}
+}\\
+*/
